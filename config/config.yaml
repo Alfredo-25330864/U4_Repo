@@ -1,0 +1,54 @@
+# =====================================================================
+#  Configuración de la unidad U4 — Ajuste de curvas e interpolación.
+# ---------------------------------------------------------------------
+#  Todo lo que se ajusta sin tocar código vive aquí. La teoría está en
+#  docs/ y las funciones en lib/ajuste_curvas.py.
+#
+#  Esta versión NO tiene backend de calificación: los cuadernos usan
+#  autoevaluación local. Si se conecta Apps Script, agregar aquí las
+#  claves `webhook_token` y `apps_script_url` como en U3.
+# =====================================================================
+unidad:
+  id: "U4"
+  nombre: "Ajuste de curvas e interpolación"
+  materia: "Métodos Numéricos"
+  temas:
+    - "4.1 Interpolación lineal y cuadrática"
+    - "4.2 Polinomios de Newton y Lagrange"
+    - "4.3 Regresión por mínimos cuadrados"
+    - "4.4 Aplicaciones"
+
+evaluacion:
+  tolerancia_numerica: 1e-6     # comparación relativa en autoevaluación
+  max_intentos: 0               # 0 = sin límite (no hay backend)
+  accion: "local"               # no se envía nada
+
+datos:
+  # Ejemplos del libro usados en cuadernos y pruebas.
+  ln2:
+    x: [1.0, 4.0, 6.0, 5.0]
+    f: [0.0, 1.386294, 1.791759, 1.609438]
+    punto: 2.0
+    verdadero: 0.6931472
+  regresion_lineal_tabla_17_1:
+    x: [1, 2, 3, 4, 5, 6, 7]
+    y: [0.5, 2.5, 2.0, 4.0, 3.5, 6.0, 5.5]
+  regresion_cuadratica_tabla_17_4:
+    x: [0, 1, 2, 3, 4, 5]
+    y: [2.1, 7.7, 13.6, 27.2, 40.9, 61.1]
+  fourier_19_1:
+    dt: 0.15
+    n: 10
+    omega0: 4.189
+    y: [2.200, 1.595, 1.031, 0.722, 0.786, 1.200, 1.805, 2.369, 2.678, 2.614]
+
+aplicaciones:
+  robot:
+    tiempo: [0, 1, 2, 3, 4, 5]
+    x: [0.0, 1.2, 2.1, 3.4, 4.8, 6.0]
+    y: [0.0, 0.8, 1.9, 2.0, 1.4, 0.6]
+    velocidad_max: 2.0
+  sensor:
+    x: [0, 10, 20, 30, 40, 50, 60, 70, 80, 90]
+    y: [0.2, 0.9, 1.8, 2.5, 3.4, 4.2, 5.4, 6.2, 7.5, 8.4]
+    ruido: 0.1
