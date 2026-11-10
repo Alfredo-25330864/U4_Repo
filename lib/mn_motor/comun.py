@@ -37,6 +37,17 @@ def semilla_de(identificador):
     return int(hashlib.sha256(nc.encode('utf-8')).hexdigest()[:8], 16)
 
 
+def rng_de(identificador, sal=0):
+    """Generador reproducible del alumno, con un desplazamiento por uso.
+
+    ``sal`` separa los sorteos de un mismo alumno (actividad a mano, casos
+    ocultos de cada pregunta, laboratorio) para que dos usos no reciban los
+    mismos números por casualidad.
+    """
+    import numpy as np
+    return np.random.default_rng(semilla_de(identificador) ^ (sal or 0))
+
+
 def semilla_pregunta(identificador, sal):
     """Semilla independiente por pregunta.
 
@@ -163,24 +174,31 @@ def _es_escalar(x):
     return True
 
 
-def comparar(respuesta, esperado):
-    """Compara la respuesta con lo esperado, admitiendo escalares y matrices.
+def _comparar_estructura(a, e, tol):
+    """Compara recursivamente números, listas, tuplas y matrices."""
+    if isinstance(e, (list, tuple)):
+        if hasattr(a, 'tolist') and not isinstance(a, (list, tuple)):
+            a = a.tolist()
+        if not isinstance(a, (list, tuple)) or len(a) != len(e):
+            return False
+        return all(_comparar_estructura(x, y, tol) for x, y in zip(a, e))
+    return numero_igual(a, e, tol)
 
-    Los métodos que devuelven dos resultados (por ejemplo LU entrega ``L`` y
-    ``U``) se comparan pieza por pieza. Los escalares se comparan con
-    ``numero_igual``; todo lo demás pasa por ``matriz_igual``.
+
+def comparar(respuesta, esperado, tol=1e-6):
+    """Compara la respuesta con lo esperado, admitiendo escalares y listas.
+
+    Acepta una matriz de NumPy, una lista de listas, una tupla de resultados o
+    un número suelto: se compara el VALOR, no el tipo. Los métodos que
+    devuelven varias piezas (``L`` y ``U``, o ``A0``, ``A`` y ``B``) se
+    comparan elemento por elemento.
     """
-    if _es_escalar(esperado):
-        return numero_igual(respuesta, esperado)
-    if _es_lista_de_matrices(esperado):
-        try:
-            partes = list(respuesta)
-        except TypeError:
+    if isinstance(respuesta, str):
+        parsed = a_lista(respuesta)
+        if parsed is None:
             return False
-        if len(partes) != len(esperado):
-            return False
-        return all(matriz_igual(p, e) for p, e in zip(partes, esperado))
-    return matriz_igual(respuesta, esperado)
+        respuesta = parsed[0] if len(parsed) == 1 else parsed
+    return _comparar_estructura(respuesta, esperado, tol)
 
 
 def numero_igual(respuesta, esperado, tol=1e-6):
@@ -188,3 +206,20 @@ def numero_igual(respuesta, esperado, tol=1e-6):
         return abs(float(respuesta) - float(esperado)) < tol
     except (TypeError, ValueError):
         return False
+
+
+def cerca_relativa(valor, ref, tol=1e-4):
+    """¿``valor`` coincide con ``ref``? Tolerancia relativa, tolerante al truncado.
+
+    Se usa en las actividades a mano: el alumno reporta 4 decimales, así que
+    truncar o redondear deben dar lo mismo. El divisor es el mayor de los dos
+    (o 1), para que reportar 0 no produzca un error enorme.
+    """
+    try:
+        v, r = float(valor), float(ref)
+    except (TypeError, ValueError):
+        return False
+    if v != v or r != r:
+        return False
+    escala = max(1.0, abs(v), abs(r))
+    return abs(v - r) / escala <= tol

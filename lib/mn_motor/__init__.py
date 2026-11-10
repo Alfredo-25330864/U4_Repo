@@ -9,7 +9,11 @@ hay, cómo se siembran, cómo se comparan las respuestas) vive en:
 Flujo típico en el cuaderno::
 
     MI_TAREA = generar_tarea(alumno_id, nombre)   # una sola vez
+    mano_enunciado('INTERP_LINEAL')               # actividad a mano
+    mano_comprueba('INTERP_LINEAL', [4.0])        # revisa sin revelar
+    practica('INTERP_LINEAL')                     # prueba tu función
     pregunta(1)                                   # muestra la pregunta 1
+    mano_comprueba_todos()                        # celda final: resumen
     puntos, maximo = calificar()                  # sin enviar
     enviar(alumno_id)                             # envía (máx. 2 intentos)
 
@@ -19,12 +23,16 @@ Dónde tocar cada cosa:
     el orden de las preguntas  -> preguntas/<cuaderno>/__init__.py
     cómo se muestran           -> lib/mn_motor/ui.py
     cómo se califican          -> lib/mn_motor/califica.py
+    las actividades a mano     -> lib/mn_motor/mano.py + ejercicios_u4.py
+    los algoritmos de ref.     -> lib/mn_motor/solvers_u4.py
     el envío al backend        -> lib/mn_motor/envio.py
 """
 from mn_motor.ajustes import CUADERNO, MAX_INTENTOS, TAREA_ID
 from mn_motor.califica import calificar
-from mn_motor.comun import extraer_nc, semilla_de
+from mn_motor.comun import cerca_relativa, extraer_nc, semilla_de
 from mn_motor.envio import consultar_calificacion, enviar, ultimo_envio
+from mn_motor.mano import (mano_comprueba, mano_comprueba_todos,
+                           mano_ejercicio, mano_enunciado, mano_valores)
 from mn_motor.practica import practica
 from mn_motor.tarea import generar_tarea, preguntas_del_cuaderno, ver_preguntas
 from mn_motor.ui import pregunta
@@ -32,10 +40,16 @@ from mn_motor.ui import pregunta
 __all__ = [
     'consultar_calificacion',
     'calificar',
+    'cerca_relativa',
     'cuaderno',
     'enviar',
     'extraer_nc',
     'generar_tarea',
+    'mano_comprueba',
+    'mano_comprueba_todos',
+    'mano_ejercicio',
+    'mano_enunciado',
+    'mano_valores',
     'practica',
     'pregunta',
     'semilla_de',
@@ -58,7 +72,7 @@ def usar_cuaderno(nombre, tarea_id=None):
     Hace falta porque el paquete ``preguntas/`` tiene una carpeta por cuaderno y
     el motor no puede adivinar cuál es: en modo blob lo trae incrustado, pero en
     modo módulos hay que decírselo. También fija el id de la pestaña del backend,
-    para que el Cuaderno 02 no escriba en la del 01.
+    para que un cuaderno no escriba en la pestaña de otro.
     """
     import mn_motor.ajustes as ajustes
     ajustes.CUADERNO = nombre

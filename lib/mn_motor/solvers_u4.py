@@ -1,12 +1,13 @@
 """solvers_u4 — implementaciones de REFERENCIA para la Unidad 4.
 
-Estas funciones viven en el motor, nunca en el cuaderno: son contra lo que se
-comparan las respuestas de los alumnos. Se escriben con aritmética exacta
-(sympy) siempre que se pueda, para que la comparación no dependa de tolerancias
-ni confunda un error de redondeo con un error de método.
+Viven en el motor, nunca en el cuaderno: son contra lo que se comparan las
+funciones que escriben los alumnos. Se escriben con aritmética exacta (sympy)
+siempre que se pueda, para que la comparación no dependa de tolerancias ni
+confunda un error de redondeo con un error de método.
 
-La API es independiente de ``lib/ajuste_curvas.py`` a propósito: el motor debe
-poder empaquetarse en el blob sin arrastrar la biblioteca del cuaderno.
+Un método completo y sus piezas sueltas son funciones distintas, igual que en
+el cuaderno: la función del método LLAMA a las de sus pasos, así el alumno
+puede probar cada pieza por separado.
 """
 from __future__ import annotations
 
@@ -24,13 +25,59 @@ def _vector(valores):
     return [_racional(v) for v in valores]
 
 
-# ----------------------------------------------------------------------
-# Interpolación de Newton
-# ----------------------------------------------------------------------
-def diferencias_divididas(x, y):
-    """Coeficientes ``b0..bn`` (diagonal de la tabla de diferencias).
+# ======================================================================
+# 4.1 — Interpolación lineal y cuadrática
+# ======================================================================
+def interpolacion_lineal(x0, f0, x1, f1, x):
+    """Ecuación (18.2): recta que pasa por dos nodos, evaluada en ``x``."""
+    x0, f0, x1, f1, x = map(_racional, (x0, f0, x1, f1, x))
+    if x1 == x0:
+        raise ZeroDivisionError('los dos nodos deben ser distintos')
+    return sp.nsimplify(f0 + (f1 - f0) / (x1 - x0) * (x - x0))
 
-    Ecuaciones (18.8)–(18.14). Falla si hay abscisas repetidas.
+
+def coeficientes_cuadraticos(x0, f0, x1, f1, x2, f2):
+    """``[b0, b1, b2]`` de la parábola (18.3), con (18.4)–(18.6)."""
+    x0, f0, x1, f1, x2, f2 = map(_racional, (x0, f0, x1, f1, x2, f2))
+    if x0 == x1 or x1 == x2 or x0 == x2:
+        raise ZeroDivisionError('los tres nodos deben ser distintos')
+    b0 = f0
+    b1 = sp.nsimplify((f1 - f0) / (x1 - x0))
+    pend2 = (f2 - f1) / (x2 - x1)
+    b2 = sp.nsimplify((pend2 - b1) / (x2 - x0))
+    return [sp.nsimplify(b0), b1, b2]
+
+
+def interpolacion_cuadratica(x0, f0, x1, f1, x2, f2, x):
+    """Parábola por tres nodos en forma anidada (18.3).
+
+    Llama a ``coeficientes_cuadraticos``: la pieza suelta y el método completo
+    no se programan dos veces.
+    """
+    b0, b1, b2 = coeficientes_cuadraticos(x0, f0, x1, f1, x2, f2)
+    x0, x1, x = _racional(x0), _racional(x1), _racional(x)
+    return sp.nsimplify(b0 + b1 * (x - x0) + b2 * (x - x0) * (x - x1))
+
+
+def error_estimado_interpolacion(dif_siguiente, nodos, x):
+    """Estimación del error con un punto extra, ecuación (18.18).
+
+    ``Rn = f[x_{n+1},...,x_0] * prod(x - x_i)``.
+    """
+    producto = sp.Integer(1)
+    for xi in nodos:
+        producto *= (_racional(x) - _racional(xi))
+    return sp.nsimplify(_racional(dif_siguiente) * producto)
+
+
+# ======================================================================
+# 4.2 — Newton en diferencias divididas y Lagrange
+# ======================================================================
+def tabla_diferencias(x, y):
+    """Tabla triangular completa de diferencias divididas, (18.12)–(18.14).
+
+    ``T[i][j]`` es la diferencia de orden ``j`` que termina en ``x[i]``; las
+    casillas que no se usan quedan en 0 para que la tabla sea rectangular.
     """
     xv, yv = _vector(x), _vector(y)
     if len(xv) != len(yv):
@@ -46,11 +93,17 @@ def diferencias_divididas(x, y):
         for i in range(j, n):
             T[i][j] = sp.nsimplify(
                 (T[i][j - 1] - T[i - 1][j - 1]) / (xv[i] - xv[i - j]))
-    return [T[i][i] for i in range(n)]
+    return T
+
+
+def coeficientes_newton(x, y):
+    """``b0..bn``: la diagonal de la tabla, ecuaciones (18.8)–(18.11)."""
+    T = tabla_diferencias(x, y)
+    return [T[i][i] for i in range(len(T))]
 
 
 def evaluar_newton(x, coef, xx):
-    """Evalúa la forma (18.7) con Horner, sin diferencias adicionales."""
+    """Evalúa la forma (18.7) con Horner."""
     xv = _vector(x)
     b = _vector(coef)
     if len(b) != len(xv):
@@ -61,15 +114,12 @@ def evaluar_newton(x, coef, xx):
     return sp.nsimplify(p)
 
 
-def newton(x, y, xx):
-    """Atajo: diferencias divididas + evaluación en ``xx``."""
-    return evaluar_newton(x, diferencias_divididas(x, y), xx)
+def interpolacion_newton(x, y, xx):
+    """Método completo: coeficientes + evaluación."""
+    return evaluar_newton(x, coeficientes_newton(x, y), xx)
 
 
-# ----------------------------------------------------------------------
-# Interpolación de Lagrange
-# ----------------------------------------------------------------------
-def evaluar_lagrange(x, y, xx):
+def interpolacion_lagrange(x, y, xx):
     """Forma de Lagrange, ecuaciones (18.20)–(18.21)."""
     xv, yv = _vector(x), _vector(y)
     if len(xv) != len(yv):
@@ -88,84 +138,137 @@ def evaluar_lagrange(x, y, xx):
     return sp.nsimplify(total)
 
 
-# ----------------------------------------------------------------------
-# Mínimos cuadrados
-# ----------------------------------------------------------------------
-def minimos_cuadrados(x, y, grado):
-    """Coeficientes ``a0..am`` de las ecuaciones normales (17.19).
+def error_newton(x, coef, xx):
+    """Término de grado ``n`` como estimación del error, ecuación (18.19).
 
-    Para ``grado=1`` reproduce (17.4)–(17.7); para ``grado=2``, (17.19).
-    Devuelve una lista de coeficientes exactos.
+    Es ``b_n * prod_{i<n}(x - x_i)``: la diferencia entre las predicciones de
+    grado ``n`` y ``n+1``.
     """
-    xv, yv = _vector(x), _vector(y)
-    if len(xv) != len(yv):
-        raise ValueError('x y y deben tener el mismo tamaño')
-    m = int(grado)
-    if m < 0:
-        raise ValueError('el grado debe ser >= 0')
-    if len(xv) < m + 1:
-        raise ValueError('se requieren al menos tantos datos como coeficientes')
+    xv = _vector(x)
+    b = _vector(coef)
+    if len(b) != len(xv):
+        raise ValueError('se requiere un coeficiente por nodo')
+    producto = sp.Integer(1)
+    for xi in xv[:-1]:
+        producto *= (_racional(xx) - xi)
+    return sp.nsimplify(b[-1] * producto)
 
+
+# ======================================================================
+# 4.3 — Mínimos cuadrados
+# ======================================================================
+def suma_residuos_cuadrados(x, y, coef):
+    """``Sr`` de la ecuación (17.3), para coeficientes crecientes."""
+    xv, yv = _vector(x), _vector(y)
+    a = _vector(coef)
+    total = sp.Integer(0)
+    for xi, yi in zip(xv, yv):
+        modelo = sum(aj * xi ** j for j, aj in enumerate(a))
+        total += (yi - modelo) ** 2
+    return sp.nsimplify(total)
+
+
+def _normal(xv, yv, m):
+    """Resuelve las ecuaciones normales (17.19) y devuelve ``a0..am``."""
     V = sp.Matrix([[xi ** j for j in range(m + 1)] for xi in xv])
     rhs = sp.Matrix(yv)
     coef = (V.T * V).LUsolve(V.T * rhs)
     return [sp.nsimplify(v) for v in coef]
 
 
-def evaluar_polinomio(coef, xx):
-    """Evalúa ``a0 + a1 x + ... + am x^m`` (coeficientes crecientes)."""
-    xv = _racional(xx)
-    total = sp.Integer(0)
-    for j, a in enumerate(_vector(coef)):
-        total += a * xv ** j
-    return sp.nsimplify(total)
+def regresion_lineal(x, y):
+    """``[a0, a1]`` con las ecuaciones normales (17.4)–(17.7)."""
+    xv, yv = _vector(x), _vector(y)
+    if len(xv) != len(yv):
+        raise ValueError('x y y deben tener el mismo tamaño')
+    if len(xv) < 2:
+        raise ValueError('se necesitan al menos 2 datos')
+    return _normal(xv, yv, 1)
 
 
-# ----------------------------------------------------------------------
-# Fourier (sección 19.1)
-# ----------------------------------------------------------------------
+def regresion_cuadratica(x, y):
+    """``[a0, a1, a2]`` con las ecuaciones normales (17.19)."""
+    xv, yv = _vector(x), _vector(y)
+    if len(xv) != len(yv):
+        raise ValueError('x y y deben tener el mismo tamaño')
+    if len(xv) < 3:
+        raise ValueError('se necesitan al menos 3 datos')
+    return _normal(xv, yv, 2)
+
+
+def suma_cuadrados_total(y):
+    """``St``: suma de cuadrados alrededor de la media."""
+    yv = _vector(y)
+    if not yv:
+        raise ValueError('no hay datos')
+    media = sp.nsimplify(sum(yv) / len(yv))
+    return sp.nsimplify(sum((yi - media) ** 2 for yi in yv))
+
+
+def error_estandar(Sr, n, m):
+    """``sy/x`` de las ecuaciones (17.9) y (17.20)."""
+    Sr, n, m = _racional(Sr), int(n), int(m)
+    gl = n - (m + 1)
+    if gl <= 0:
+        raise ValueError('no quedan grados de libertad para estimar el error')
+    return sp.nsimplify(sp.sqrt(Sr / gl))
+
+
+def coeficiente_determinacion(Sr, St):
+    """``r^2`` de la ecuación (17.10)."""
+    Sr, St = _racional(Sr), _racional(St)
+    if St == 0:
+        raise ValueError('St = 0: los datos no tienen dispersión')
+    return sp.nsimplify((St - Sr) / St)
+
+
+# ======================================================================
+# Tarea extra — Fourier (sección 19.1)
+# ======================================================================
 def coeficientes_fourier(t, y, omega0, m):
     """``(A0, A, B)`` con las ecuaciones (19.14)–(19.16).
 
-    ``A`` y ``B`` son listas de longitud ``m`` (``A1..Am``, ``B1..Bm``).
-    Se exige el mismo número de muestras para cada armónico; el llamador es
-    responsable de que los datos estén igualmente espaciados.
+    Aquí NO se usa aritmética exacta: los coeficientes de Fourier se evalúan
+    con ``cos`` y ``sin``, y racionalizar ``omega0`` cambiaría el resultado.
     """
-    tv, yv = _vector(t), _vector(y)
+    import math
+
+    tv = [float(v) for v in t]
+    yv = [float(v) for v in y]
     if len(tv) != len(yv):
         raise ValueError('t y y deben tener el mismo tamaño')
     N = len(tv)
     if N == 0:
         raise ValueError('no hay datos')
-    w = _racional(omega0)
+    w = float(omega0)
     m = int(m)
-    A0 = sp.nsimplify(sum(yv) / N)
-    A, B = [], []
-    for j in range(1, m + 1):
-        A.append(sp.nsimplify(2 * sum(yi * sp.cos(j * w * ti)
-                                     for ti, yi in zip(tv, yv)) / N))
-        B.append(sp.nsimplify(2 * sum(yi * sp.sin(j * w * ti)
-                                     for ti, yi in zip(tv, yv)) / N))
+    A0 = sum(yv) / N
+    A = [2.0 / N * sum(yi * math.cos(j * w * ti) for ti, yi in zip(tv, yv))
+         for j in range(1, m + 1)]
+    B = [2.0 / N * sum(yi * math.sin(j * w * ti) for ti, yi in zip(tv, yv))
+         for j in range(1, m + 1)]
     return A0, A, B
 
 
 def evaluar_fourier(t, coef, omega0):
     """Evalúa ``A0 + sum(Aj cos(j w t) + Bj sin(j w t))``."""
+    import math
+
     A0, A, B = coef
-    tv = _vector(t)
-    w = _racional(omega0)
+    w = float(omega0)
     salida = []
-    for ti in tv:
-        total = _racional(A0)
+    for ti in [float(v) for v in t]:
+        total = float(A0)
         for j, (Aj, Bj) in enumerate(zip(A, B), start=1):
-            total += Aj * sp.cos(j * w * ti) + Bj * sp.sin(j * w * ti)
-        salida.append(sp.nsimplify(total))
+            total += float(Aj) * math.cos(j * w * ti)
+            total += float(Bj) * math.sin(j * w * ti)
+        salida.append(total)
     return salida
 
 
-# ----------------------------------------------------------------------
+# ======================================================================
 # Puente con optimización (capítulo 4, sección 13.2)
-# ----------------------------------------------------------------------
+# ======================================================================
 def x_parabolico(x0, x1, x2, f0, f1, f2):
     """Vértice de la parábola por tres puntos, ecuación (13.7)."""
     x0, x1, x2, f0, f1, f2 = map(_racional, (x0, x1, x2, f0, f1, f2))
@@ -178,13 +281,23 @@ def x_parabolico(x0, x1, x2, f0, f1, f2):
 
 
 __all__ = [
+    'coeficiente_determinacion',
+    'coeficientes_cuadraticos',
     'coeficientes_fourier',
-    'diferencias_divididas',
+    'coeficientes_newton',
+    'error_estandar',
+    'error_estimado_interpolacion',
+    'error_newton',
     'evaluar_fourier',
-    'evaluar_lagrange',
     'evaluar_newton',
-    'evaluar_polinomio',
-    'minimos_cuadrados',
-    'newton',
+    'interpolacion_cuadratica',
+    'interpolacion_lagrange',
+    'interpolacion_lineal',
+    'interpolacion_newton',
+    'regresion_cuadratica',
+    'regresion_lineal',
+    'suma_cuadrados_total',
+    'suma_residuos_cuadrados',
+    'tabla_diferencias',
     'x_parabolico',
 ]
