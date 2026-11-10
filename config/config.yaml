@@ -1,12 +1,11 @@
 # =====================================================================
 #  Configuración de la unidad U4 — Ajuste de curvas e interpolación.
 # ---------------------------------------------------------------------
-#  Todo lo que se ajusta sin tocar código vive aquí. La teoría está en
-#  docs/ y las funciones en lib/ajuste_curvas.py.
+#  Todo lo que se ajusta sin tocar código vive aquí: los cuadernos y su
+#  pestaña, las tolerancias y el webhook. La teoría está en docs/, las
+#  funciones del alumno en ejercicios/ y los blobs en grader/.
 #
-#  Esta versión NO tiene backend de calificación: los cuadernos usan
-#  autoevaluación local. Si se conecta Apps Script, agregar aquí las
-#  claves `webhook_token` y `apps_script_url` como en U3.
+#  Cada cuaderno tiene su pestaña en la hoja de cálculo y sus 2 intentos.
 # =====================================================================
 unidad:
   id: "U4"
@@ -18,10 +17,21 @@ unidad:
     - "4.3 Regresión por mínimos cuadrados"
     - "4.4 Aplicaciones"
 
+# Un cuaderno = una pestaña del backend = un blob en grader/.
+cuadernos:
+  u4_01_interpolacion: "U4_01_Interpolacion"
+  u4_02_newton_lagrange: "U4_02_Newton_Lagrange"
+  u4_03_minimos_cuadrados: "U4_03_Minimos_Cuadrados"
+  u4_04_casos: "U4_04_Casos"
+
 evaluacion:
-  tolerancia_numerica: 1e-6     # comparación relativa en autoevaluación
-  max_intentos: 0               # 0 = sin límite (no hay backend)
-  accion: "local"               # no se envía nada
+  tolerancia_funcion: 1e-6      # comparación de las funciones programadas
+  tolerancia_mano: 1.5e-4       # actividades a mano: 4 decimales, truncado o redondeo
+  max_intentos: 2               # envíos permitidos (lo impone el Apps Script)
+  accion: "guardar"
+  # ⚠️ REEMPLAZAR por los valores reales al desplegar el Apps Script de U4.
+  webhook_token: ""
+  apps_script_url: ""
 
 datos:
   # Ejemplos del libro usados en cuadernos y pruebas.
