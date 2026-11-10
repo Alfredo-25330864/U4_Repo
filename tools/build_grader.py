@@ -134,7 +134,6 @@ def _verificar(codigo, cuaderno, tarea_id):
         raise AssertionError(f'el blob quedó apuntando a {ns["cuaderno"]()!r}')
 
     import mn_motor.ejercicios_u4 as cat
-    import mn_motor.solvers_u4 as sol
 
     tarea = ns['generar_tarea']('m16330887@hermosillo.tecnm.mx', 'Prueba')
     if not tarea['preguntas']:
@@ -150,11 +149,15 @@ def _verificar(codigo, cuaderno, tarea_id):
 
     # Alumno perfecto: las funciones de referencia del motor empaquetado.
     import importlib
-    motor = importlib.import_module('mn_motor')
-    _ = motor
-    marco = {cat.NOMBRE_FUNCION[m]: getattr(sol, cat.NOMBRE_FUNCION[m])
-             for m in cat.METODOS
-             if cat.NOMBRE_FUNCION[m] in dir(sol)}
+    u3 = importlib.import_module('mn_motor.solvers_u3')
+    u4 = importlib.import_module('mn_motor.solvers_u4')
+    marco = {}
+    for m in cat.METODOS:
+        nombre = cat.NOMBRE_FUNCION[m]
+        if hasattr(u4, nombre):
+            marco[nombre] = getattr(u4, nombre)
+        elif hasattr(u3, nombre):
+            marco[nombre] = getattr(u3, nombre)
     puntos = 0
     for q in tarea['preguntas']:
         q['respuestas'] = None

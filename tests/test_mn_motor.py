@@ -12,6 +12,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(os.path.dirname(__file__)), "lib
 import mn_motor  # noqa: E402
 import mn_motor.califica as califica  # noqa: E402
 import mn_motor.comun as comun  # noqa: E402
+import mn_motor.solvers_u3 as solvers_u3  # noqa: E402
 import mn_motor.solvers_u4 as solvers  # noqa: E402
 import sympy as sp  # noqa: E402
 
@@ -108,6 +109,31 @@ class TestSolversU4(unittest.TestCase):
         self.assertAlmostEqual(float(x3), 1.5055, places=4)
 
 
+class TestSolversU3(unittest.TestCase):
+    def test_gauss_resuelve_sistema_entero(self):
+        A = [[4, 1, -1], [2, 7, 1], [1, -3, 12]]
+        b = [3, 19, 31]
+        self.assertEqual(solvers_u3.gauss_solve(A, b), [1.0, 2.0, 3.0])
+
+    def test_gauss_triangulariza(self):
+        Ab = solvers_u3.gauss_eliminar([[2, 1], [1, 3]], [4, 7])
+        self.assertAlmostEqual(float(Ab[1][0]), 0.0, places=12)
+        self.assertAlmostEqual(float(Ab[1][1]), 2.5, places=12)
+
+    def test_lu_reconstruye_la_matriz(self):
+        A = sp.Matrix([[4, 1, -1], [2, 7, 1], [1, -3, 12]])
+        L, U = solvers_u3.lu_doolittle(A)
+        self.assertEqual(sp.Matrix(L) * sp.Matrix(U), A)
+
+    def test_calibracion_usa_gauss_y_coincide_con_la_libreria(self):
+        x = [0, 10, 20, 30, 40]
+        y = [0.1, 1.1, 2.0, 3.1, 3.9]
+        por_gauss = solvers.coeficientes_calibracion(x, y, 1)
+        por_normales = solvers.regresion_lineal(x, y)
+        for a, b in zip(por_gauss, [float(v) for v in por_normales]):
+            self.assertAlmostEqual(a, b, places=9)
+
+
 class TestMotor(unittest.TestCase):
     CUADERNOS = (
         ('u4_01_interpolacion', 'U4_01_Interpolacion'),
@@ -117,10 +143,17 @@ class TestMotor(unittest.TestCase):
     )
 
     def _marco_ref(self):
-        """Un alumno perfecto: las funciones de referencia del solver."""
+        """Un alumno perfecto: las funciones de referencia del motor."""
         import mn_motor.ejercicios_u4 as cat
-        return {cat.NOMBRE_FUNCION[m]: getattr(solvers, cat.NOMBRE_FUNCION[m])
-                for m in cat.METODOS}
+        import mn_motor.solvers_u3 as u3
+        marco = {}
+        for m in cat.METODOS:
+            nombre = cat.NOMBRE_FUNCION[m]
+            if hasattr(solvers, nombre):
+                marco[nombre] = getattr(solvers, nombre)
+            elif hasattr(u3, nombre):
+                marco[nombre] = getattr(u3, nombre)
+        return marco
 
     def test_alumno_perfecto_en_los_cuatro_cuadernos(self):
         marco = self._marco_ref()

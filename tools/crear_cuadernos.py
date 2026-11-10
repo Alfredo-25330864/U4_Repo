@@ -273,11 +273,6 @@ from ejercicios.{archivo.replace('/', '.').replace('.py', '')} import *
     code(nb, f'#@title 📊 Laboratorio · {titulo}\nvisualizar.laboratorio("{metodo}", EJ_{n})')
 
 
-def preguntas_celda(nb, n, metodo):
-    code(nb, f'#@title 🧪 Pregunta {n} · {metodo}\n# Cuando tu función ya funcione, contéstala aquí.\n'
-             f'pregunta({n})')
-
-
 # =====================================================================
 # Cuaderno 01 — Interpolación
 # =====================================================================
@@ -422,6 +417,31 @@ graficar.""",
 # Cuaderno 04 — Casos (U3 + U4) y Fourier extra
 # ======================================================================
 NB04 = [
+    ("CASO_GAUSS", "Sistema lineal por eliminación gaussiana (Unidad 3)",
+     r"""Antes de ajustar hay que **resolver**. Las ecuaciones normales de un
+ajuste son un sistema lineal, así que se atacan con lo de la Unidad 3:
+eliminación hacia adelante y sustitución hacia atrás.
+
+$$a_{ii}^{(k+1)} = a_{ii} - m\,a_{ki}, \qquad m=\frac{a_{ik}}{a_{kk}} \tag{U3}$$
+
+Multiplicadores, pivoteo y costo $O(n^3)$: lo ya estudiado. Aquí sólo se
+reutiliza para el caso.""",
+     "casos/gauss_solve.py", "0.0, 0.0, 0.0", True),
+
+    ("CASO_NORMALES", "Calibración: ecuaciones normales por Gauss",
+     r"""El caso completo, con las dos unidades juntas:
+
+1. Un sensor da lecturas $x$ y temperaturas $y$ con ruido.
+2. Se plantean las **ecuaciones normales** (17.4)–(17.5): un sistema $2\times2$.
+3. Se resuelve con **eliminación gaussiana** (Unidad 3).
+
+$$n a_0+\left(\sum x_i\right)a_1=\sum y_i,\qquad
+\left(\sum x_i\right)a_0+\left(\sum x_i^2\right)a_1=\sum x_iy_i \tag{17.4–17.5}$$
+
+Tu función `coeficientes_calibracion` debe **llamar** a `gauss_solve`: no se
+resuelve el sistema dos veces con dos métodos distintos.""",
+     "casos/coeficientes_calibracion.py", "0.0, 0.0", True),
+
     ("FOURIER", "Serie de Fourier (tarea extra)",
      r"""Con datos igualmente espaciados que completan un periodo, los
 coeficientes salen de sumas simples:
@@ -436,6 +456,12 @@ base de funciones.""",
 ]
 
 
+def preguntas_celda(nb, n, metodo):
+    code(nb, f'#@title 🧪 Pregunta {n} · {metodo}\n'
+             f'# Cuando tu función ya funcione, contéstala aquí.\n'
+             f'pregunta({n})')
+
+
 def construir(nb, metodos, prefijo):
     for n, (metodo, titulo, teoria, archivo, args) in enumerate(metodos, start=1):
         bloque(nb, n, metodo, titulo, teoria, archivo, args)
@@ -446,7 +472,7 @@ def construir(nb, metodos, prefijo):
 CASOS_U3_U4 = r'''
 ---
 
-## Caso A · Calibración de un sensor (mínimos cuadrados + sistemas lineales)
+## Caso · Calibración de un sensor (mínimos cuadrados + sistemas lineales)
 
 **El problema.** Un sensor entrega una lectura digital $x$ y se calibra contra
 un patrón de temperatura $y$. El fabricante reporta ruido de $\pm0.1$ °C.

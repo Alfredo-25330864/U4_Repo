@@ -131,6 +131,27 @@ def _datos_coef_determinacion(rng):
     return (sr, st)
 
 
+def _datos_caso_gauss(rng):
+    while True:
+        A = [[float(rng.integers(-3, 4)) for _ in range(3)] for _ in range(3)]
+        for i in range(3):
+            otros = sum(abs(A[i][j]) for j in range(3) if j != i)
+            A[i][i] = otros + float(rng.integers(1, 4))
+        sol = [float(rng.integers(-3, 4)) for _ in range(3)]
+        b = [sum(A[i][j] * sol[j] for j in range(3)) for i in range(3)]
+        if any(v == 0 for v in sol):
+            continue
+        return (A, b)
+
+
+def _datos_caso_normales(rng):
+    xs = [float(v) for v in (0, 10, 20, 30, 40)]
+    a1 = int(rng.integers(1, 4))
+    a0 = int(rng.integers(0, 5))
+    ys = [float(a0 + a1 * x + int(rng.integers(-1, 2))) for x in xs]
+    return (xs, ys, 1)
+
+
 _DATOS = {
     'INTERP_LINEAL': _datos_lineal,
     'COEF_CUADRATICOS': _datos_coef_cuadraticos,
@@ -145,15 +166,29 @@ _DATOS = {
     'REG_CUADRATICA': _datos_reg_cuadratica,
     'ERROR_ESTANDAR': _datos_error_estandar,
     'COEF_DETERMINACION': _datos_coef_determinacion,
+    'CASO_GAUSS': _datos_caso_gauss,
+    'CASO_NORMALES': _datos_caso_normales,
     'FOURIER': _datos_fourier,
 }
 
 
+def _modulo_de(metodo):
+    """El módulo de referencia del método: U4 para casi todo, U3 para Gauss."""
+    import mn_motor.solvers_u3 as u3
+
+    nombre = catalogo.NOMBRE_FUNCION[metodo]
+    if hasattr(sol, nombre):
+        return sol
+    if hasattr(u3, nombre):
+        return u3
+    raise AttributeError(f'no hay referencia para {metodo!r} ({nombre})')
+
+
 def _esperado(metodo, entrada):
     """Valor de referencia para una entrada, con el solver del motor."""
-    fn = getattr(sol, catalogo.NOMBRE_FUNCION[metodo])
-    salida = fn(*entrada)
-    return _a_tipos_simples(salida)
+    modulo = _modulo_de(metodo)
+    fn = getattr(modulo, catalogo.NOMBRE_FUNCION[metodo])
+    return _a_tipos_simples(fn(*entrada))
 
 
 def _a_tipos_simples(valor):

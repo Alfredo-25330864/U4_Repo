@@ -1,9 +1,10 @@
 """Preguntas del cuaderno `u4_04_casos`.
 
-Una pregunta de programar por método del cuaderno. Los casos ocultos salen de
-`preguntas/_fabrica.py` y su valor esperado lo calcula `solvers_u4`.
+Casos que combinan la Unidad 3 (sistemas lineales) con la Unidad 4 (ajuste de
+curvas), más Fourier como tarea extra. Los casos ocultos salen de
+`preguntas/_fabrica.py`.
 """
 
 from preguntas._fabrica import preguntas_de
 
-PREGUNTAS = preguntas_de(['FOURIER'])
+PREGUNTAS = preguntas_de(['CASO_GAUSS', 'CASO_NORMALES', 'FOURIER'])

@@ -176,6 +176,36 @@ def _normal(xv, yv, m):
     return [sp.nsimplify(v) for v in coef]
 
 
+def sistema_normal(x, y, grado):
+    """``(A, b)`` de las ecuaciones normales, para resolverlas por Gauss.
+
+    Es el puente entre las dos unidades: el ajuste produce un sistema lineal
+    y la eliminación gaussiana lo resuelve.
+    """
+    xv, yv = _vector(x), _vector(y)
+    m = int(grado)
+    if len(xv) != len(yv):
+        raise ValueError('x y y deben tener el mismo tamaño')
+    if len(xv) < m + 1:
+        raise ValueError('se requieren al menos tantos datos como coeficientes')
+    A = [[sum(xi ** (i + j) for xi in xv) for j in range(m + 1)]
+         for i in range(m + 1)]
+    b = [sum(yi * xi ** i for xi, yi in zip(xv, yv)) for i in range(m + 1)]
+    return [[float(v) for v in fila] for fila in A], [float(v) for v in b]
+
+
+def coeficientes_calibracion(x, y, grado=1):
+    """Ajuste por mínimos cuadrados resuelto con **eliminación gaussiana**.
+
+    Combina la Unidad 4 (ecuaciones normales) con la Unidad 3 (sistema lineal):
+    arma ``A a = b`` y lo resuelve con ``solvers_u3.gauss_solve``.
+    """
+    import mn_motor.solvers_u3 as u3
+
+    A, b = sistema_normal(x, y, grado)
+    return u3.gauss_solve(A, b)
+
+
 def regresion_lineal(x, y):
     """``[a0, a1]`` con las ecuaciones normales (17.4)–(17.7)."""
     xv, yv = _vector(x), _vector(y)
@@ -282,6 +312,7 @@ def x_parabolico(x0, x1, x2, f0, f1, f2):
 
 __all__ = [
     'coeficiente_determinacion',
+    'coeficientes_calibracion',
     'coeficientes_cuadraticos',
     'coeficientes_fourier',
     'coeficientes_newton',
@@ -296,6 +327,7 @@ __all__ = [
     'interpolacion_newton',
     'regresion_cuadratica',
     'regresion_lineal',
+    'sistema_normal',
     'suma_cuadrados_total',
     'suma_residuos_cuadrados',
     'tabla_diferencias',

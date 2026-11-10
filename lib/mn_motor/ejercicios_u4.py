@@ -34,6 +34,8 @@ METODOS = (
     'REG_CUADRATICA',
     'ERROR_ESTANDAR',
     'COEF_DETERMINACION',
+    'CASO_GAUSS',
+    'CASO_NORMALES',
     'FOURIER',
 )
 
@@ -51,6 +53,8 @@ NOMBRE_METODO = {
     'REG_CUADRATICA': 'Regresión cuadrática',
     'ERROR_ESTANDAR': 'Error estándar de la estimación',
     'COEF_DETERMINACION': 'Coeficiente de determinación',
+    'CASO_GAUSS': 'Sistema lineal por eliminación gaussiana (Unidad 3)',
+    'CASO_NORMALES': 'Calibración: ecuaciones normales por Gauss (U3 + U4)',
     'FOURIER': 'Serie de Fourier (tarea extra)',
 }
 
@@ -69,6 +73,8 @@ NOMBRE_FUNCION = {
     'REG_CUADRATICA': 'regresion_cuadratica',
     'ERROR_ESTANDAR': 'error_estandar',
     'COEF_DETERMINACION': 'coeficiente_determinacion',
+    'CASO_GAUSS': 'gauss_solve',
+    'CASO_NORMALES': 'coeficientes_calibracion',
     'FOURIER': 'coeficientes_fourier',
 }
 
@@ -87,6 +93,8 @@ NOMBRE_PIEZA = {
     'REG_CUADRATICA': 'regresion_cuadratica',
     'ERROR_ESTANDAR': 'error_estandar',
     'COEF_DETERMINACION': 'coeficiente_determinacion',
+    'CASO_GAUSS': 'gauss_eliminar',
+    'CASO_NORMALES': 'sistema_normal',
     'FOURIER': 'coeficientes_fourier',
 }
 
@@ -99,7 +107,7 @@ CUADERNO_METODOS = {
     'u4_03_minimos_cuadrados': ('SUMA_RESIDUOS', 'REG_LINEAL',
                                 'REG_CUADRATICA', 'ERROR_ESTANDAR',
                                 'COEF_DETERMINACION'),
-    'u4_04_casos': ('FOURIER',),
+    'u4_04_casos': ('CASO_GAUSS', 'CASO_NORMALES', 'FOURIER'),
 }
 
 
@@ -374,6 +382,61 @@ def _ej_coef_determinacion(rng):
 
 
 # =====================================================================
+# Cuaderno 04 — casos que combinan Unidad 3 y Unidad 4
+# =====================================================================
+def _ej_caso_gauss(rng):
+    """Sistema 3x3 dominante con solución entera (repaso de la Unidad 3)."""
+    while True:
+        A = [[int(rng.integers(-3, 4)) for _ in range(3)] for _ in range(3)]
+        for i in range(3):
+            otros = sum(abs(A[i][j]) for j in range(3) if j != i)
+            A[i][i] = otros + int(rng.integers(1, 4))
+        sol = [int(rng.integers(-3, 4)) for _ in range(3)]
+        b = [sum(A[i][j] * sol[j] for j in range(3)) for i in range(3)]
+        ref = sol
+        if any(v == 0 for v in ref) or len(set(b)) == 1:
+            continue
+        break
+    filas = '\n'.join(' & '.join(str(v) for v in fila) + r' \\' for fila in A)
+    return {
+        'tipo': 'CASO_GAUSS',
+        'titulo': 'Sistema 3×3 por eliminación gaussiana',
+        'contexto': (
+            'Un caso de la Unidad 3, como paso previo: las ecuaciones normales '
+            'del ajuste **son** un sistema lineal.\n\n'
+            '$$\n\\begin{bmatrix}\n' + filas + '\n\\end{bmatrix}'
+            '\\begin{bmatrix} x_1 \\\\ x_2 \\\\ x_3 \\end{bmatrix}'
+            '=\\begin{bmatrix} ' + r' \\\\ '.join(str(v) for v in b)
+            + ' \\end{bmatrix}\n$$\n\n',
+            ),
+        'datos': {'A': [[float(v) for v in fila] for fila in A],
+                  'b': [float(v) for v in b]},
+        'x': [float(v) for v in ref],
+    }
+
+
+def _ej_caso_normales(rng):
+    """Calibración lineal: plantea las ecuaciones normales y las resuelve."""
+    xs = [0, 10, 20, 30, 40]
+    a1 = int(rng.integers(1, 4))
+    a0 = int(rng.integers(0, 5))
+    ys = [a0 + a1 * x + int(rng.integers(-1, 2)) for x in xs]
+    coef = sol.coeficientes_calibracion(xs, ys, 1)
+    return {
+        'tipo': 'CASO_NORMALES',
+        'titulo': 'Calibración lineal con las ecuaciones normales',
+        'contexto': ('Los datos de calibración de un sensor son\n\n'
+                     + _tabla(xs, ys)
+                     + '\n\nPlantea las ecuaciones normales (17.4)–(17.5) y '
+                       'resuélvelas con eliminación gaussiana. '
+                       'Reporta $a_0$ y $a_1$.'),
+        'datos': {'x': [float(v) for v in xs], 'y': [float(v) for v in ys],
+                  'grado': 1},
+        'coef': [float(v) for v in coef],
+    }
+
+
+# =====================================================================
 # Tarea extra — Fourier
 # =====================================================================
 def _ej_fourier(rng):
@@ -414,6 +477,8 @@ MANO_FABRICA = {
     'REG_CUADRATICA': [_ej_reg_cuadratica],
     'ERROR_ESTANDAR': [_ej_error_estandar],
     'COEF_DETERMINACION': [_ej_coef_determinacion],
+    'CASO_GAUSS': [_ej_caso_gauss],
+    'CASO_NORMALES': [_ej_caso_normales],
     'FOURIER': [_ej_fourier],
 }
 
@@ -440,6 +505,11 @@ MANO_REPORTE = {
                        ('r^2', lambda ej: ej['r2'])),
     'ERROR_ESTANDAR': (('s_{y/x}', lambda ej: ej['syx']),),
     'COEF_DETERMINACION': (('r^2', lambda ej: ej['r2']),),
+    'CASO_GAUSS': (('x_1', lambda ej: ej['x'][0]),
+                   ('x_2', lambda ej: ej['x'][1]),
+                   ('x_3', lambda ej: ej['x'][2])),
+    'CASO_NORMALES': (('a_0', lambda ej: ej['coef'][0]),
+                      ('a_1', lambda ej: ej['coef'][1])),
     'FOURIER': (('A_0', lambda ej: ej['A0']),
                 ('A_1', lambda ej: ej['A1']),
                 ('B_1', lambda ej: ej['B1'])),
