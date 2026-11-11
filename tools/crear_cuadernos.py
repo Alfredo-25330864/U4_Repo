@@ -128,24 +128,33 @@ else:
     print("Repositorio :", REPO)
 
 # --- Motor de calificación -------------------------------------------
-if ES_COLAB:
+# Se usa el código fuente si está (rama `test`, para depurar); si no, el blob
+# empaquetado de grader/, que es lo que recibe el alumno.
+_ruta_modulos = os.path.join(REPO, "lib", "mn_motor")
+_ruta_blob = os.path.join(REPO, "grader", CUADERNO + ".txt")
+
+_lib = os.path.join(REPO, "lib")
+if _lib not in sys.path:
+    sys.path.insert(0, _lib)          # ajuste_curvas y, si está, mn_motor
+
+if os.path.isdir(_ruta_modulos):
+    import mn_motor as _motor
+    globals().update({{n: getattr(_motor, n) for n in _motor.__all__}})
+    print("Motor       : módulos de lib/mn_motor (modo profesor)")
+else:
     import base64
     import zlib
 
-    ruta_blob = os.path.join(REPO, "grader", CUADERNO + ".txt")
-    with open(ruta_blob, encoding="utf-8") as f:
+    if not os.path.exists(_ruta_blob):
+        raise FileNotFoundError(
+            "No encuentro el motor: falta grader/" + CUADERNO + ".txt\n"
+            "Clona el repositorio completo (incluye la carpeta grader/).")
+    with open(_ruta_blob, encoding="utf-8") as f:
         codigo = zlib.decompress(base64.b64decode(f.read().strip())).decode("utf-8")
     _MOTOR = {{"__name__": "mn_motor_blob", "__file__": "<blob>"}}
     exec(compile(codigo, "<blob>", "exec"), _MOTOR)
     globals().update({{n: _MOTOR[n] for n in _MOTOR["__all__"]}})
-    print("Motor       : blob verificado")
-else:
-    _lib = os.path.join(REPO, "lib")
-    if _lib not in sys.path:
-        sys.path.insert(0, _lib)
-    import mn_motor as _motor
-    globals().update({{n: getattr(_motor, n) for n in _motor.__all__}})
-    print("Motor       : módulos de lib/mn_motor")
+    print("Motor       : blob verificado de grader/")
 
 usar_cuaderno(CUADERNO, TAREA_ID)
 
@@ -463,8 +472,10 @@ def preguntas_celda(nb, n, metodo):
 
 
 def construir(nb, metodos, prefijo):
-    for n, (metodo, titulo, teoria, archivo, args) in enumerate(metodos, start=1):
-        bloque(nb, n, metodo, titulo, teoria, archivo, args)
+    for n, item in enumerate(metodos, start=1):
+        metodo, titulo, teoria, archivo, args = item[:5]
+        con_practica = item[5] if len(item) > 5 else True
+        bloque(nb, n, metodo, titulo, teoria, archivo, args, con_practica)
         preguntas_celda(nb, n, titulo)
     return nb
 
