@@ -205,6 +205,29 @@ def _lab_estadistico(ej, titulo, valor, etiqueta):
 # ---------------------------------------------------------------------
 # Fourier
 # ---------------------------------------------------------------------
+def _lab_caso_gauss(ej):
+    """Matriz del sistema y su solución, lado a lado."""
+    d = ej['datos']
+    A = np.asarray(d['A'], dtype=float)
+    fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(10, 3.8))
+    ax1.imshow(A, cmap='Blues')
+    for i in range(A.shape[0]):
+        for j in range(A.shape[1]):
+            ax1.text(j, i, f'{A[i, j]:g}', ha='center', va='center',
+                     color='black' if abs(A[i, j]) < A.max() * 0.6 else 'white')
+    ax1.set_title('Matriz del sistema')
+    ax1.set_xticks([]); ax1.set_yticks([])
+
+    x = ej['x']
+    barras = ax2.bar([f'$x_{i + 1}$' for i in range(len(x))], x, color='tab:green')
+    ax2.bar_label(barras, fmt='%.4g')
+    ax2.axhline(0, color='k', lw=0.8)
+    ax2.set_title('Solución del sistema')
+    ax2.grid(alpha=0.3, axis='y')
+    plt.tight_layout()
+    plt.show()
+
+
 def _lab_fourier(ej):
     d = ej['datos']
     coef = {'A0': d['y'] and np.mean(d['y']), 'A': [], 'B': []}
@@ -241,6 +264,8 @@ _LABS = {
         ej, 'Error estándar de la estimación', ej['syx'], '$s_{y/x}$'),
     'COEF_DETERMINACION': lambda ej: _lab_estadistico(
         ej, 'Coeficiente de determinación', ej['r2'], '$r^2$'),
+    'CASO_GAUSS': _lab_caso_gauss,
+    'CASO_NORMALES': _lab_reg_lineal,
     'FOURIER': _lab_fourier,
 }
 

@@ -21,7 +21,7 @@ verificación a mano, verificación de preguntas, envío y consulta del envío.
 | **01** | **Interpolación** | lineal, coeficientes de la parábola, cuadrática, error con punto extra |
 | **02** | **Newton y Lagrange** | tabla de diferencias, coeficientes, evaluación, Lagrange, error |
 | **03** | **Mínimos cuadrados** | $S_r$, regresión lineal, cuadrática, $s_{y/x}$, $r^2$ |
-| **04** | **Casos (U3 + U4)** | caso de calibración con ecuaciones normales resueltas por Gauss + serie de Fourier (tarea extra) |
+| **04** | **Casos (U3 + U4)** | sistema 3×3 por Gauss (repaso) · calibración con ecuaciones normales resueltas por Gauss · serie de Fourier (tarea extra) |
 
 ### 🔁 El flujo de cada método
 
@@ -40,6 +40,17 @@ verificación a mano, verificación de preguntas, envío y consulta del envío.
   datos de tu actividad a mano, así que copiar el enunciado no sirve.
 - Las **actividades a mano** se verifican localmente y quedan como evidencia;
   no restan puntos si te equivocas, pero sí te avisan.
+
+El cuaderno 04 cierra el puente entre unidades: las **ecuaciones normales** de
+un ajuste son un sistema lineal, y se resuelven con eliminación gaussiana
+(Unidad 3). Por eso incluye `gauss_solve` y `coeficientes_calibracion`, que
+arma el sistema y lo resuelve llamando a `gauss_solve`.
+
+### 📦 Dónde vive el motor
+
+`grader/<cuaderno>.txt` es un blob (base64 + zlib) con el motor y las preguntas
+de ese cuaderno. El cuaderno lo carga en memoria: así funciona igual en Colab,
+en Codespaces y en local, **sin** depender de la rama privada `test`.
 
 ---
 
