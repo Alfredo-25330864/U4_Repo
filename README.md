@@ -11,16 +11,46 @@ cuándo debe ajustarse.
 
 ## 🧭 Los cuatro cuadernos
 
-La unidad se recorre en cuatro cuadernos. Cada uno mezcla teoría, laboratorio y
-preguntas de autoevaluación: **no hay documentos aparte que leer antes**; el
-cuaderno es autosuficiente.
+La unidad se recorre en cuatro cuadernos calificables. Cada **método** repite
+el mismo camino: **explicación → actividad a mano → programar la función →
+laboratorio con gráficas**. Al final hay cuatro celdas de cierre:
+verificación a mano, verificación de preguntas, envío y consulta del envío.
 
-| # | Cuaderno | Qué se aprende |
+| # | Cuaderno | Métodos |
 |---|---|---|
-| **01** | **Interpolación lineal y cuadrática** | Recta entre dos nodos, parábola por tres nodos, error de truncamiento y elección de nodos. |
-| **02** | **Newton y Lagrange** | Tabla de diferencias divididas, forma general de Newton, fórmula de Lagrange y comparación entre ambas. |
-| **03** | **Mínimos cuadrados** | Criterio de $S_r$, ecuaciones normales, regresión lineal y cuadrática, $s_{y/x}$, $r^2$ y ajuste sinusoidal. |
-| **04** | **Aplicaciones** | Trayectoria de un robot, perfil de una imagen de líneas con Fourier, calibración de un sensor y optimización con parábola. |
+| **01** | **Interpolación** | lineal, coeficientes de la parábola, cuadrática, error con punto extra |
+| **02** | **Newton y Lagrange** | tabla de diferencias, coeficientes, evaluación, Lagrange, error |
+| **03** | **Mínimos cuadrados** | $S_r$, regresión lineal, cuadrática, $s_{y/x}$, $r^2$ |
+| **04** | **Casos (U3 + U4)** | sistema 3×3 por Gauss (repaso) · calibración con ecuaciones normales resueltas por Gauss · serie de Fourier (tarea extra) |
+
+### 🔁 El flujo de cada método
+
+1. **Explicación.** Teoría corta, ecuación numerada del libro y figura.
+2. **A mano.** `mano_enunciado(...)` con datos sembrados por tu número de
+   control. Reportas los valores con **4 decimales** y `mano_comprueba(...)`
+   te dice si están dentro de tolerancia (no revela la respuesta).
+3. **Programar.** Abres el archivo de `ejercicios/` que ya viene armado,
+   completas la función y la pruebas con `practica(...)`.
+4. **Laboratorio.** `visualizar.laboratorio(...)` dibuja el método y tu
+   resultado.
+
+### 🧩 Qué se califica
+
+- Las **preguntas de programar** (una por método) con casos ocultos: no son los
+  datos de tu actividad a mano, así que copiar el enunciado no sirve.
+- Las **actividades a mano** se verifican localmente y quedan como evidencia;
+  no restan puntos si te equivocas, pero sí te avisan.
+
+El cuaderno 04 cierra el puente entre unidades: las **ecuaciones normales** de
+un ajuste son un sistema lineal, y se resuelven con eliminación gaussiana
+(Unidad 3). Por eso incluye `gauss_solve` y `coeficientes_calibracion`, que
+arma el sistema y lo resuelve llamando a `gauss_solve`.
+
+### 📦 Dónde vive el motor
+
+`grader/<cuaderno>.txt` es un blob (base64 + zlib) con el motor y las preguntas
+de ese cuaderno. El cuaderno lo carga en memoria: así funciona igual en Colab,
+en Codespaces y en local, **sin** depender de la rama privada `test`.
 
 ---
 
@@ -54,6 +84,12 @@ U4_Repo/
 │   └── caso04_fourier_lineas.md
 ├── docs/figuras/                  <-- figuras generadas por tools/generar_figuras.py
 │   └── libro/                     <-- figuras del libro (con atribución)
+├── ejercicios/                    <-- una función por archivo, con __main__
+│   ├── interpolacion/
+│   ├── newton_lagrange/
+│   ├── minimos_cuadrados/
+│   └── casos/
+├── grader/                        <-- un blob por cuaderno (lo que carga Colab)
 ├── notebooks/                     <-- los cuatro cuadernos
 ├── lib/
 │   ├── robomat.py                 <-- biblioteca del curso (sintaxis MATLAB)
@@ -66,6 +102,10 @@ U4_Repo/
 ├── config/
 │   └── config.yaml                <-- parámetros de la unidad
 └── tools/                         <-- utilidades locales
+    ├── verificar.py
+    ├── generar_figuras.py
+    ├── build_site.py
+    └── visualizar.py              <-- laboratorios gráficos (público)
 ```
 
 ---
@@ -75,20 +115,25 @@ U4_Repo/
 ### En VS Code (local)
 
 1. Abre el cuaderno desde `notebooks/`.
-2. Ejecuta la **primera celda**: localiza `lib/robomat.py` y `lib/ajuste_curvas.py`
-   subiendo por las carpetas del proyecto y los carga.
-3. Trabaja el cuaderno de arriba abajo. Las secciones de laboratorio no se
-   califican: ahí conviene romper cosas y experimentar.
-4. Las preguntas de autoevaluación comparan tu respuesta con la correcta y te
-   avisan si algo no cuadra. **No envían nada**: esta unidad no tiene backend.
+2. Ejecuta la **primera celda**: detecta que estás en local y usa los archivos
+   del repositorio directamente, **sin pedirte ningún enlace**.
+3. Trabaja el cuaderno de arriba abajo.
+4. Las preguntas se califican con el motor que trae el propio repo.
 
 ### En Google Colab
 
-1. Sube la carpeta `U4_Repo` a tu Drive (o clónala si tienes el repositorio
-   publicado).
-2. Abre el cuaderno y ejecuta la primera celda. Si no encuentra `lib/`, sube la
-   carpeta `lib/` junto al cuaderno.
-3. El resto es igual que en local.
+1. Haz un **fork público** del repositorio del curso (así las horas de
+   Codespaces se cobran a tu cuenta, no al repositorio del profesor).
+2. Abre el cuaderno desde tu fork (o súbelo a Drive).
+3. Ejecuta la **primera celda**. Detecta que estás en Colab, monta tu Drive y te
+   pide **una sola vez** el enlace de tu fork. Lo guarda en
+   `MyDrive/CursoMN/u4_repo.json`: en las siguientes sesiones lo reutiliza sin
+   volver a preguntar (y te deja cambiarlo con un botón).
+4. Clona o actualiza el repo en `MyDrive/CursoMN/U4_Repo`, carga el blob de
+   `grader/` y continúa.
+
+> 📦 El motor viaja **empaquetado** en `grader/<cuaderno>.txt`: el cuaderno no
+> depende de que tu fork tenga `lib/mn_motor`.
 
 ### En GitHub Codespaces
 
