@@ -22,6 +22,10 @@ import nbformat as nbf
 RAIZ = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 SALIDA = os.path.join(RAIZ, "notebooks")
 
+# Figuras del libro servidas desde el repositorio público (funcionan en Colab).
+RAW = ("https://raw.githubusercontent.com/ITH-MGL-MN/U4_Repo"
+       "/refs/heads/main/docs/figuras/libro/")
+
 # ---------------------------------------------------------------------
 # Celda 1: entorno (local o Colab) + repositorio + motor
 # ---------------------------------------------------------------------
@@ -255,17 +259,21 @@ def nuevo(titulo, subtitulo):
     return nb
 
 
-def bloque(nb, n, metodo, titulo, teoria, archivo, args, practica=True):
-    """Un método: teoría, actividad a mano, función y laboratorio."""
+def bloque(nb, n, metodo, titulo, teoria, archivo, args, practica=True,
+           pasos=None, figuras=(), comprueba=None, preguntas=()):
+    """Un método: teoría, actividad a mano, función, laboratorio y preguntas."""
+    dibujos = "".join(f"\n\n![{cap}]({RAW}{img})" for img, cap in figuras)
     md(nb, f"""
 ---
 
 ## Método {n} · {titulo}
 
-{teoria}
+{teoria}{dibujos}
 """)
     code(nb, f'#@title ✏️ Actividad a mano · {titulo}\nEJ_{n} = mano_enunciado("{metodo}")')
-    code(nb, f"""#@title ✅ Comprueba tus valores a mano · {titulo}
+    if pasos:
+        md(nb, pasos)
+    code(nb, comprueba or f"""#@title ✅ Comprueba tus valores a mano · {titulo}
 # Reporta los números que obtuviste, con 4 decimales.
 mano_comprueba("{metodo}", [{args}])""")
     md(nb, f"""
@@ -280,11 +288,118 @@ from ejercicios.{archivo.replace('/', '.').replace('.py', '')} import *
     if practica:
         code(nb, f'#@title ▶️ Prueba tu función con un ejemplo\npractica("{metodo}")')
     code(nb, f'#@title 📊 Laboratorio · {titulo}\nvisualizar.laboratorio("{metodo}", EJ_{n})')
+    for q in preguntas:
+        preguntas_celda(nb, q, titulo)
 
 
 # =====================================================================
 # Cuaderno 01 — Interpolación
 # =====================================================================
+TAYLOR = r"""
+---
+
+## Antes de interpolar: polinomios de Taylor
+
+Una función suave puede aproximarse cerca de un punto $a$ mediante una suma
+infinita de potencias construida con sus derivadas en ese punto. La **serie de
+Taylor** es
+
+$$f(x)=\sum_{k=0}^{\infty}\frac{f^{(k)}(a)}{k!}(x-a)^k,$$
+
+cuando la serie converge a $f(x)$ en infinitas iteraciones.
+
+En la práctica se conservan solo los primeros $n+1$ términos: el **polinomio de
+Taylor** de grado $n$,
+
+$$T_n(x)=\sum_{k=0}^{n}\frac{f^{(k)}(a)}{k!}(x-a)^k.$$
+
+Por ejemplo, para $e^x$ alrededor de $a=0$, $T_2(x)=1+x+\frac{x^2}{2}$. En
+$x=0.2$ da $1.22$, mientras que $e^{0.2}\approx1.2214$; la diferencia es el
+error de truncamiento algorítmico. Bajo las condiciones del teorema de Taylor,
+ese error puede escribirse como
+
+$$R_n(x)=f(x)-T_n(x)=\frac{f^{(n+1)}(\xi)}{(n+1)!}(x-a)^{n+1},$$
+
+para algún punto $\xi$ entre $a$ y $x$.
+
+**Conexión con esta unidad:** Taylor usa derivadas en un punto para aproximar
+localmente; la **interpolación** usa valores conocidos en varios nodos y
+construye un polinomio que pasa por ellos. Aquí trabajaremos con esta segunda
+idea.
+"""
+
+PASOS_LINEAL = r"""
+**🔢 Resolución paso a paso.**
+
+1. Identifica el intervalo $[x_0,x_1]$ que contiene a $x$.
+2. Anota $y_0 = f(x_0)$ y $y_1 = f(x_1)$.
+3. Calcula la pendiente $m=\dfrac{y_1-y_0}{x_1-x_0}$.
+4. Evalúa $y=y_0+m(x-x_0)$.
+"""
+
+PASOS_CUADRATICA = r"""
+**🔢 Resolución paso a paso.**
+
+1. Anota los tres nodos $(x_0,y_0)$, $(x_1,y_1)$, $(x_2,y_2)$ y el punto $x$.
+2. Calcula las dos pendientes entre tramos consecutivos:
+   $m_1=\dfrac{y_1-y_0}{x_1-x_0}$ y $m_2=\dfrac{y_2-y_1}{x_2-x_1}$.
+3. Coeficientes: $b_0=y_0$, $b_1=m_1$ y $b_2=\dfrac{m_2-m_1}{x_2-x_0}$.
+4. Evalúa $y=b_0+b_1(x-x_0)+b_2(x-x_0)(x-x_1)$.
+"""
+
+PASOS_ERROR = r"""
+**🔢 Resolución paso a paso.**
+
+1. Ordena los cuatro nodos de menor a mayor en $x$.
+2. Calcula las pendientes de primer orden $f[x_i,x_j]=\dfrac{y_j-y_i}{x_j-x_i}$.
+3. Con ellas arma las de segundo orden y, al final, la de tercer orden
+   $f[x_3,x_2,x_1,x_0]$.
+4. Multiplica esa diferencia por $(x-x_0)(x-x_1)(x-x_2)$: ése es $R_2$.
+"""
+
+COMPRUEBA_LINEAL = '''#@title ✅ Comprueba tus valores a mano · Interpolación lineal
+# Datos de tu enunciado (no los cambies, cambian con tu número de control):
+x0, y0 = EJ_1["datos"]["x0"], EJ_1["datos"]["f0"]
+x1, y1 = EJ_1["datos"]["x1"], EJ_1["datos"]["f1"]
+x = EJ_1["datos"]["x"]
+
+# Haz la cuenta a mano y escribe abajo tu resultado con 4 decimales:
+#   1) pendiente  m = (y1 - y0) / (x1 - x0)
+#   2) evalúa     y = y0 + m * (x - x0)
+y = 0.0
+mano_comprueba("INTERP_LINEAL", y)'''
+
+COMPRUEBA_CUADRATICA = '''#@title ✅ Comprueba tus valores a mano · Interpolación cuadrática
+# Datos de tu enunciado (no los cambies, cambian con tu número de control):
+x0, y0 = EJ_2["datos"]["x0"], EJ_2["datos"]["f0"]
+x1, y1 = EJ_2["datos"]["x1"], EJ_2["datos"]["f1"]
+x2, y2 = EJ_2["datos"]["x2"], EJ_2["datos"]["f2"]
+x = EJ_2["datos"]["x"]
+
+# Haz la cuenta a mano y escribe abajo tu resultado con 4 decimales:
+#   1) m1 = (y1 - y0) / (x1 - x0)      2) m2 = (y2 - y1) / (x2 - x1)
+#   3) b0 = y0,  b1 = m1,  b2 = (m2 - m1) / (x2 - x0)
+#   4) y = b0 + b1 * (x - x0) + b2 * (x - x0) * (x - x1)
+y = 0.0
+mano_comprueba("INTERP_CUADRATICA", y)'''
+
+COMPRUEBA_ERROR = '''#@title ✅ Comprueba tus valores a mano · Error con un punto extra
+# Datos de tu enunciado (no los cambies, cambian con tu número de control):
+x0, x1, x2 = EJ_3["datos"]["nodos"]
+x3 = EJ_3["datos"]["x_todos"][3]
+y0, y1, y2, y3 = EJ_3["datos"]["y"]
+x = EJ_3["datos"]["x"]
+
+# Haz la cuenta a mano y escribe abajo tu resultado con 4 decimales:
+#   1) f[x1,x0] = (y1-y0)/(x1-x0)     f[x2,x1] = (y2-y1)/(x2-x1)
+#      f[x3,x2] = (y3-y2)/(x3-x2)
+#   2) f[x2,x1,x0] = (f[x2,x1]-f[x1,x0])/(x2-x0)
+#      f[x3,x2,x1] = (f[x3,x2]-f[x2,x1])/(x3-x1)
+#   3) f[x3,x2,x1,x0] = (f[x3,x2,x1]-f[x2,x1,x0])/(x3-x0)
+#   4) R = f[x3,x2,x1,x0] * (x-x0) * (x-x1) * (x-x2)
+R = 0.0
+mano_comprueba("ERROR_INTERP", R)'''
+
 NB01 = [
     ("INTERP_LINEAL", "Interpolación lineal",
      r"""Es unir dos puntos con una recta. Por triángulos semejantes,
@@ -301,7 +416,12 @@ $$R_1\cong f[x_2,x_1,x_0]\,(x-x_0)(x-x_1) \tag{18.18}$$
 
 Mientras no escribas `error_estimado_interpolacion` (método 3), regresa
 `(y, None)`.""",
-     "interpolacion/interpolacion_lineal.py", "0.0"),
+     "interpolacion/interpolacion_lineal.py", "0.0",
+     {"pasos": PASOS_LINEAL,
+      "figuras": [("fig18-2_interpolacion_lineal.jpg",
+                   "Figura 18.2 del libro: interpolación lineal")],
+      "comprueba": COMPRUEBA_LINEAL,
+      "preguntas": (1, 2)}),
 
     ("INTERP_CUADRATICA", "Interpolación cuadrática",
      r"""Con tres puntos se ajusta el único polinomio de segundo grado:
@@ -310,21 +430,26 @@ $$f_2(x)=b_0+b_1(x-x_0)+b_2(x-x_0)(x-x_1) \tag{18.3}$$
 
 Los coeficientes salen de dos pendientes:
 
-$$b_0=y_0 \tag{18.4}$$
+$$m_1=\frac{y_1-y_0}{x_1-x_0} \qquad\text{y}\qquad
+m_2=\frac{y_2-y_1}{x_2-x_1}$$
 
-$$b_1=\frac{y_1-y_0}{x_1-x_0} \tag{18.5}$$
+$$b_0=y_0 \tag{18.4}\qquad b_1=m_1 \tag{18.5}\qquad
+b_2=\frac{m_2-m_1}{x_2-x_0} \tag{18.6}$$
 
-$$b_2=\frac{\dfrac{y_2-y_1}{x_2-x_1}-\dfrac{y_1-y_0}{x_1-x_0}}{x_2-x_0} \tag{18.6}$$
-
-Los dos primeros términos son la recta; $b_2$ aporta la curvatura. Todo se
-calcula dentro de la misma función: no hace falta un paso aparte para los
-coeficientes.
+Los dos primeros términos son la recta; $b_2$ mide cómo cambia la pendiente y
+aporta la curvatura. Todo se calcula dentro de la misma función: no hace falta
+un paso aparte para los coeficientes.
 
 **Dos salidas.** Devuelve `(y, error)`, y el error sólo aparece con un cuarto
 dato:
 
 $$R_2\cong f[x_3,x_2,x_1,x_0]\,(x-x_0)(x-x_1)(x-x_2) \tag{18.18}$$""",
-     "interpolacion/interpolacion_cuadratica.py", "0.0"),
+     "interpolacion/interpolacion_cuadratica.py", "0.0",
+     {"pasos": PASOS_CUADRATICA,
+      "figuras": [("fig18-4_ln2_cuadratica.jpg",
+                   "Figura 18.4 del libro: parábola por tres puntos")],
+      "comprueba": COMPRUEBA_CUADRATICA,
+      "preguntas": (3, 4)}),
 
     ("ERROR_INTERP", "Error con un punto extra",
      r"""Un dato más de los necesarios sirve para **estimar** el error sin
@@ -335,7 +460,12 @@ $$R_n\cong f[x_{n+1},x_n,\dots,x_0]\prod_{i=0}^{n}(x-x_i) \tag{18.18}$$
 Es la diferencia entre la predicción de grado $n+1$ y la de grado $n$
 (ecuación 18.19). Cuando termines esta función, vuelve a tus dos métodos y
 activa el cálculo del error.""",
-     "interpolacion/error_estimado_interpolacion.py", "0.0"),
+     "interpolacion/error_estimado_interpolacion.py", "0.0",
+     {"pasos": PASOS_ERROR,
+      "figuras": [("fig18-6_ln2_cubica.jpg",
+                   "Figura 18.6 del libro: con un nodo extra se mide el error")],
+      "comprueba": COMPRUEBA_ERROR,
+      "preguntas": (5, 6)}),
 ]
 
 # Celdas extra del cuaderno 01: conectar el error con los dos métodos.
@@ -363,19 +493,6 @@ print("\nEl valor de referencia de tu actividad a mano no se muestra aquí:")
 print("compáralo con lo que reportaste en la celda ✅ del método 3.")
 '''
 
-
-def preguntas_teoricas(nb, cuantas):
-    """Celdas de preguntas teóricas (opción múltiple)."""
-    md(nb, """
----
-
-## 🧠 Preguntas teóricas
-
-Son de criterio: el código ya lo escribiste y lo comprobaste con `practica(...)`.
-Aquí se evalúa si entiendes **por qué** funciona el método.
-""")
-    for i in range(1, cuantas + 1):
-        code(nb, f'#@title 🧠 Pregunta {i}\npregunta({i})')
 
 # ======================================================================
 # Cuaderno 02 — Newton y Lagrange
@@ -525,10 +642,14 @@ def preguntas_celda(nb, n, metodo):
 def construir(nb, metodos, prefijo, preguntas_por_metodo=True):
     for n, item in enumerate(metodos, start=1):
         metodo, titulo, teoria, archivo, args = item[:5]
-        con_practica = item[5] if len(item) > 5 else True
-        bloque(nb, n, metodo, titulo, teoria, archivo, args, con_practica)
-        if preguntas_por_metodo:
-            preguntas_celda(nb, n, titulo)
+        opciones = item[5] if len(item) > 5 else {}
+        if isinstance(opciones, bool):
+            opciones = {"practica": opciones}
+        else:
+            opciones = dict(opciones)
+        if preguntas_por_metodo and "preguntas" not in opciones:
+            opciones["preguntas"] = (n,)
+        bloque(nb, n, metodo, titulo, teoria, archivo, args, **opciones)
     return nb
 
 
@@ -627,37 +748,37 @@ def main():
         ("U4_01_Interpolacion.ipynb", "u4_01_interpolacion",
          "U4_01_Interpolacion", "📐 Cuaderno 01 — Interpolación",
          "Tema 4.1. Cada método sigue el mismo camino: **explicación → a mano → "
-         "programar → laboratorio**. Las preguntas finales son teóricas.",
-         NB01, False, 5),
+         "programar → laboratorio → preguntas**.",
+         NB01, False, TAYLOR),
         ("U4_02_Newton_Lagrange.ipynb", "u4_02_newton_lagrange",
          "U4_02_Newton_Lagrange", "🌳 Cuaderno 02 — Newton y Lagrange",
          "Tema 4.2. Dos formas del **mismo** polinomio, más la estimación del "
          "error.",
-         NB02, False, 0),
+         NB02, False, None),
         ("U4_03_Minimos_Cuadrados.ipynb", "u4_03_minimos_cuadrados",
          "U4_03_Minimos_Cuadrados", "📉 Cuaderno 03 — Mínimos cuadrados",
          "Tema 4.3. Cuando los datos traen ruido no se interpola: se ajusta.",
-         NB03, False, 0),
+         NB03, False, None),
         ("U4_04_Casos.ipynb", "u4_04_casos", "U4_04_Casos",
          "🧩 Cuaderno 04 — Casos (Unidades 3 y 4)",
          "Tema 4.4. Casos que combinan **sistemas lineales** (Unidad 3) con "
          "**ajuste de curvas** (Unidad 4), y la serie de Fourier como tarea "
          "extra.",
-         NB04, True, 0),
+         NB04, True, None),
     ]
 
     for (archivo, cuaderno, tarea_id, titulo, subtitulo,
-         metodos, con_casos, n_teoricas) in especificaciones:
+         metodos, con_casos, intro) in especificaciones:
         nb = nuevo(titulo, subtitulo)
         code(nb, ENTORNO.format(cuaderno=cuaderno, tarea_id=tarea_id))
         code(nb, IDENTIFICACION)
+        if intro:
+            md(nb, intro)
         if con_casos:
             casos(nb)
-        taller = n_teoricas > 0
-        construir(nb, metodos, cuaderno, preguntas_por_metodo=not taller)
-        if taller:
+        construir(nb, metodos, cuaderno, preguntas_por_metodo=not intro)
+        if intro:
             code(nb, CONECTAR_ERROR)
-            preguntas_teoricas(nb, n_teoricas)
         cierres(nb, metodos)
         nbf.write(nb, os.path.join(SALIDA, archivo))
         print("escrito:", archivo, f"({len(nb.cells)} celdas)")
