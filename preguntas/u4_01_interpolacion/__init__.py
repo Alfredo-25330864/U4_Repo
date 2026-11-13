@@ -10,8 +10,9 @@ _BASE = "preguntas/u4_01_interpolacion/"
 
 PREGUNTAS = [
     desde_markdown(_BASE + "t01_intervalo.md"),
+    desde_markdown(_BASE + "t06_pendiente.md"),
     desde_markdown(_BASE + "t02_grado.md"),
+    desde_markdown(_BASE + "t05_unicidad.md"),
     desde_markdown(_BASE + "t03_error.md"),
     desde_markdown(_BASE + "t04_extrapolar.md"),
-    desde_markdown(_BASE + "t05_unicidad.md"),
 ]

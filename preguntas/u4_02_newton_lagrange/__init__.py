@@ -1,9 +1,16 @@
 """Preguntas del cuaderno `u4_02_newton_lagrange`.
 
-Una pregunta de programar por método del cuaderno. Los casos ocultos salen de
-`preguntas/_fabrica.py` y su valor esperado lo calcula `solvers_u4`.
+Teóricas, de opción múltiple: el código ya se escribe en ``ejercicios/`` y se
+comprueba con ``practica(...)``, así que aquí se evalúa el criterio.
 """
 
-from preguntas._fabrica import preguntas_de
+from mn_motor.mcq import desde_markdown
 
-PREGUNTAS = preguntas_de(['NEWTON_TABLA', 'NEWTON_EVAL', 'LAGRANGE', 'ERROR_NEWTON'])
+_BASE = "preguntas/u4_02_newton_lagrange/"
+
+PREGUNTAS = [
+    desde_markdown(_BASE + "t01_diferencias.md"),
+    desde_markdown(_BASE + "t02_agregar_nodo.md"),
+    desde_markdown(_BASE + "t03_lagrange.md"),
+    desde_markdown(_BASE + "t04_error_nodo_extra.md"),
+]
