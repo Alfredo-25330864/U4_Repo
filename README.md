@@ -13,12 +13,12 @@ cuándo debe ajustarse.
 
 La unidad se recorre en cuatro cuadernos calificables. Cada **método** repite
 el mismo camino: **explicación → actividad a mano → programar la función →
-laboratorio con gráficas**. Al final hay cuatro celdas de cierre:
+laboratorio con gráficas → preguntas**. Al final hay cuatro celdas de cierre:
 verificación a mano, verificación de preguntas, envío y consulta del envío.
 
 | # | Cuaderno | Métodos |
 |---|---|---|
-| **01** | **Interpolación** | lineal · cuadrática · error con punto extra (los dos primeros devuelven `(y, error)`) |
+| **01** | **Interpolación** | repaso de polinomios de Taylor · lineal · cuadrática · error con punto extra (los dos primeros devuelven `(y, error)`) |
 | **02** | **Newton y Lagrange** | tabla de diferencias, coeficientes, evaluación, Lagrange, error |
 | **03** | **Mínimos cuadrados** | $S_r$, regresión lineal, cuadrática, $s_{y/x}$, $r^2$ |
 | **04** | **Casos (U3 + U4)** | sistema 3×3 por Gauss (repaso) · calibración con ecuaciones normales resueltas por Gauss · serie de Fourier (tarea extra) |
@@ -33,14 +33,15 @@ verificación a mano, verificación de preguntas, envío y consulta del envío.
    completas la función y la pruebas con `practica(...)`.
 4. **Laboratorio.** `visualizar.laboratorio(...)` dibuja el método y tu
    resultado.
+5. **Preguntas.** Una o dos preguntas **teóricas** de opción múltiple, dentro
+   del mismo método. Se contestan cuando tu función ya funciona.
 
 ### 🧩 Qué se califica
 
-- **Cuaderno 01:** cinco preguntas **teóricas** de opción múltiple. El código se
-  escribe en `ejercicios/` y se comprueba con `practica(...)`, así que la
-  calificación evalúa el criterio, no la transcripción del algoritmo.
-- **Cuadernos 02–04:** las preguntas de programar comparan tu función con casos
-  ocultos que no son los de tu actividad a mano.
+- **Las preguntas de cada cuaderno son teóricas** de opción múltiple
+  (6 en el 01, 4 en el 02, 5 en el 03 y 3 en el 04). El código se escribe en
+  `ejercicios/` y se comprueba con `practica(...)`, así que la calificación
+  evalúa el criterio, no la transcripción del algoritmo.
 - Las **actividades a mano** se verifican localmente y quedan como evidencia;
   no restan puntos si te equivocas, pero sí te avisan.
 
@@ -98,7 +99,7 @@ U4_Repo/
 │   ├── robomat.py                 <-- biblioteca del curso (sintaxis MATLAB)
 │   ├── ajuste_curvas.py           <-- funciones de la unidad
 │   └── mn_motor/                  <-- motor de calificación (privado, no se publica)
-├── preguntas/                     <-- índice de preguntas (privado; vacío por ahora)
+├── preguntas/                     <-- preguntas teóricas (privado, no se publica)
 ├── tests/
 │   ├── test_ajuste_curvas.py      <-- pruebas contra los ejemplos del libro
 │   └── test_mn_motor.py           <-- pruebas del motor y sus solvers
@@ -171,10 +172,10 @@ Actions** como fuente en *Settings → Pages*. Más detalles en
 | Cuadernos 01–04 (autoevaluación) | 100% | Local; el profesor puede revisar el cuaderno ejecutado |
 
 > ⚠️ **Limitación de esta versión:** no hay autograder con backend (Apps
-> Script) ni preguntas sembradas por Número de Control. El **motor base**
-> (`lib/mn_motor/`) ya está creado y probado; las preguntas y el generador de
-> blister se agregan en la siguiente fase. Mientras tanto, la autoevaluación es
-> local en cada cuaderno.
+> Script). Las preguntas son **teóricas de opción múltiple**, así que no se
+> siembran por Número de Control: sólo las actividades a mano usan tus datos.
+> La autoevaluación es local en cada cuaderno y se verifica con el motor que
+> trae el blob de `grader/`.
 
 ---
 
@@ -281,10 +282,13 @@ incluye:
 - el framework completo (`tarea`, `califica`, `mcq`, `ui`, `envio`, `recursos`);
 - `solvers_u4.py` con las referencias exactas de interpolación, mínimos
   cuadrados, Fourier y la parábola de optimización;
+- `solvers_u3.py` con Gauss y LU para los casos que mezclan ambas unidades;
 - comparación de respuestas escalares y matriciales;
-- `preguntas/` con el contrato documentado y el índice vacío del Cuaderno 01.
+- `preguntas/` con las 18 preguntas teóricas (6 + 4 + 5 + 3), una carpeta por
+  cuaderno.
 
-Las preguntas y el generador de blobs se agregan en la siguiente fase.
+`tools/build_grader.py` empaqueta el motor y sus preguntas en el blob de cada
+cuaderno, y verifica que un alumno perfecto saque el puntaje completo.
 
 ---
 
