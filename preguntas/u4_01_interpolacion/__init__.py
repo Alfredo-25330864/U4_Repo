@@ -1,9 +1,17 @@
-"""Preguntas del cuaderno `u4_01_interpolacion`.
+"""Preguntas del cuaderno ``u4_01_interpolacion``.
 
-Una pregunta de programar por método del cuaderno. Los casos ocultos salen de
-`preguntas/_fabrica.py` y su valor esperado lo calcula `solvers_u4`.
+Teóricas, de opción múltiple: el código ya se escribe en ``ejercicios/`` y se
+comprueba con ``practica(...)``, así que aquí se evalúa el criterio.
 """
 
-from preguntas._fabrica import preguntas_de
+from mn_motor.mcq import desde_markdown
 
-PREGUNTAS = preguntas_de(['INTERP_LINEAL', 'COEF_CUADRATICOS', 'INTERP_CUADRATICA', 'ERROR_INTERP'])
+_BASE = "preguntas/u4_01_interpolacion/"
+
+PREGUNTAS = [
+    desde_markdown(_BASE + "t01_intervalo.md"),
+    desde_markdown(_BASE + "t02_grado.md"),
+    desde_markdown(_BASE + "t03_error.md"),
+    desde_markdown(_BASE + "t04_extrapolar.md"),
+    desde_markdown(_BASE + "t05_unicidad.md"),
+]

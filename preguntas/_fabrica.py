@@ -83,16 +83,6 @@ def _datos_fourier(rng):
     return (ts, ys, omega0, 1)
 
 
-def _datos_coef_cuadraticos(rng):
-    x0 = int(rng.integers(0, 3))
-    x1 = x0 + int(rng.integers(1, 3))
-    x2 = x1 + int(rng.integers(1, 3))
-    a, b, c = int(rng.integers(1, 4)), int(rng.integers(-4, 4)), int(rng.integers(-5, 6))
-    f = lambda t: a * t ** 2 + b * t + c          # noqa: E731
-    return (float(x0), float(f(x0)), float(x1), float(f(x1)),
-            float(x2), float(f(x2)))
-
-
 def _datos_error_interp(rng):
     xs, ys = _nodos(rng, 4)
     from mn_motor.solvers_u4 import tabla_diferencias
@@ -154,7 +144,6 @@ def _datos_caso_normales(rng):
 
 _DATOS = {
     'INTERP_LINEAL': _datos_lineal,
-    'COEF_CUADRATICOS': _datos_coef_cuadraticos,
     'INTERP_CUADRATICA': _datos_cuadratica,
     'ERROR_INTERP': _datos_error_interp,
     'NEWTON_TABLA': _datos_newton_tabla,
@@ -192,13 +181,30 @@ def _esperado(metodo, entrada):
 
 
 def _a_tipos_simples(valor):
-    """sympy/Matrix -> float o lista de floats, para comparar sin sustos."""
+    """sympy/Matrix -> float o lista de floats, para comparar sin sustos.
+
+    ``None`` se conserva: significa "no aplica" (por ejemplo, el error cuando
+    no se dio un punto extra).
+    """
+    if valor is None:
+        return None
     if isinstance(valor, (list, tuple)):
         return [_a_tipos_simples(v) for v in valor]
     try:
         return float(valor)
     except (TypeError, ValueError):
         return valor
+
+
+def ejemplo_de(metodo):
+    """Ejemplo visible y determinista de un método: ``(entrada, esperado)``.
+
+    Sirve a ``practica()`` aunque el cuaderno no tenga pregunta de programar:
+    el alumno comprueba su función sin depender de la calificación.
+    """
+    rng = comun.rng_de('ejemplo-generico', 4_000 + catalogo.METODOS.index(metodo))
+    entrada = _DATOS[metodo](rng)
+    return entrada, _esperado(metodo, entrada)
 
 
 class PreguntaFuncion:

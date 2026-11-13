@@ -22,7 +22,6 @@ import mn_motor.solvers_u4 as sol
 # ---------------------------------------------------------------------
 METODOS = (
     'INTERP_LINEAL',
-    'COEF_CUADRATICOS',
     'INTERP_CUADRATICA',
     'ERROR_INTERP',
     'NEWTON_TABLA',
@@ -41,7 +40,6 @@ METODOS = (
 
 NOMBRE_METODO = {
     'INTERP_LINEAL': 'Interpolación lineal',
-    'COEF_CUADRATICOS': 'Coeficientes de la parábola',
     'INTERP_CUADRATICA': 'Interpolación cuadrática',
     'ERROR_INTERP': 'Error de interpolación con punto extra',
     'NEWTON_TABLA': 'Tabla de diferencias divididas',
@@ -61,7 +59,6 @@ NOMBRE_METODO = {
 # Nombre EXACTO de la función que programa el alumno.
 NOMBRE_FUNCION = {
     'INTERP_LINEAL': 'interpolacion_lineal',
-    'COEF_CUADRATICOS': 'coeficientes_cuadraticos',
     'INTERP_CUADRATICA': 'interpolacion_cuadratica',
     'ERROR_INTERP': 'error_estimado_interpolacion',
     'NEWTON_TABLA': 'coeficientes_newton',
@@ -80,9 +77,8 @@ NOMBRE_FUNCION = {
 
 # Pieza suelta asociada al método (la que el método completo debe llamar).
 NOMBRE_PIEZA = {
-    'INTERP_LINEAL': 'interpolacion_lineal',
-    'COEF_CUADRATICOS': 'coeficientes_cuadraticos',
-    'INTERP_CUADRATICA': 'coeficientes_cuadraticos',
+    'INTERP_LINEAL': 'error_estimado_interpolacion',
+    'INTERP_CUADRATICA': 'error_estimado_interpolacion',
     'ERROR_INTERP': 'error_estimado_interpolacion',
     'NEWTON_TABLA': 'tabla_diferencias',
     'NEWTON_EVAL': 'evaluar_newton',
@@ -100,8 +96,8 @@ NOMBRE_PIEZA = {
 
 # Qué métodos van a cada cuaderno (el orden importa).
 CUADERNO_METODOS = {
-    'u4_01_interpolacion': ('INTERP_LINEAL', 'COEF_CUADRATICOS',
-                            'INTERP_CUADRATICA', 'ERROR_INTERP'),
+    'u4_01_interpolacion': ('INTERP_LINEAL', 'INTERP_CUADRATICA',
+                            'ERROR_INTERP'),
     'u4_02_newton_lagrange': ('NEWTON_TABLA', 'NEWTON_EVAL', 'LAGRANGE',
                               'ERROR_NEWTON'),
     'u4_03_minimos_cuadrados': ('SUMA_RESIDUOS', 'REG_LINEAL',
@@ -142,12 +138,15 @@ def _polinomio_y_nodos(rng, cuantos=4):
 # 4.1 — Interpolación
 # =====================================================================
 def _ej_interp_lineal(rng):
+    """Recta por dos nodos, con un tercer dato aparte para estimar el error."""
     x0 = int(rng.integers(1, 5))
     x1 = x0 + int(rng.integers(2, 4))
+    x2 = x1 + int(rng.integers(1, 3))
     f0 = int(rng.integers(1, 8))
     f1 = f0 + int(rng.integers(2, 9))
+    f2 = f1 + int(rng.integers(-4, 5))
     x = x0 + 1
-    ref = float(sol.interpolacion_lineal(x0, f0, x1, f1, x))
+    y, _err = sol.interpolacion_lineal(x0, f0, x1, f1, x)
     return {
         'tipo': 'INTERP_LINEAL',
         'titulo': f'Recta por ({x0}, {f0}) y ({x1}, {f1})',
@@ -155,48 +154,38 @@ def _ej_interp_lineal(rng):
                      f'$f({x1}) = {f1}$.\n\n'
                      f'Estima $f({x})$ por interpolación lineal, ecuación (18.2).'),
         'datos': {'x0': float(x0), 'f0': float(f0), 'x1': float(x1),
-                  'f1': float(f1), 'x': float(x)},
-        'f': ref,
-    }
-
-
-def _ej_coef_cuadraticos(rng):
-    x0 = 1
-    x1 = int(rng.integers(2, 4))
-    x2 = x1 + int(rng.integers(1, 3))
-    a, b, c = int(rng.integers(1, 3)), int(rng.integers(-3, 3)), int(rng.integers(1, 7))
-    f = lambda t: a * t ** 2 + b * t + c          # noqa: E731
-    f0, f1, f2 = f(x0), f(x1), f(x2)
-    b0, b1, b2 = sol.coeficientes_cuadraticos(x0, f0, x1, f1, x2, f2)
-    return {
-        'tipo': 'COEF_CUADRATICOS',
-        'titulo': f'Parábola por ({x0}, {f0}), ({x1}, {f1}) y ({x2}, {f2})',
-        'contexto': ('Ajusta la parábola que pasa por\n\n'
-                     + _tabla([x0, x1, x2], [f0, f1, f2])
-                     + '\n\nCalcula $b_1$ con (18.5) y $b_2$ con (18.6).'),
-        'datos': {'x0': float(x0), 'f0': float(f0), 'x1': float(x1),
-                  'f1': float(f1), 'x2': float(x2), 'f2': float(f2)},
-        'b1': float(b1), 'b2': float(b2),
+                  'f1': float(f1), 'x': float(x),
+                  'x2': float(x2), 'f2': float(f2)},
+        'f': float(y),
     }
 
 
 def _ej_interp_cuadratica(rng):
-    base = _ej_coef_cuadraticos(rng)
-    d = base['datos']
-    x = d['x0'] + 1.5
-    ref = float(sol.interpolacion_cuadratica(d['x0'], d['f0'], d['x1'], d['f1'],
-                                             d['x2'], d['f2'], x))
-    base.update({
+    """Parábola por tres nodos, con un cuarto dato aparte para el error."""
+    x0 = 1
+    x1 = int(rng.integers(2, 4))
+    x2 = x1 + int(rng.integers(1, 3))
+    x3 = x2 + int(rng.integers(1, 3))
+    a, b, c = int(rng.integers(1, 3)), int(rng.integers(-3, 3)), int(rng.integers(1, 7))
+    f = lambda t: a * t ** 2 + b * t + c          # noqa: E731
+    f0, f1, f2, f3 = f(x0), f(x1), f(x2), f(x3)
+    x = x0 + 1.5
+    y, _err = sol.interpolacion_cuadratica(x0, f0, x1, f1, x2, f2, x)
+    return {
         'tipo': 'INTERP_CUADRATICA',
-        'titulo': base['titulo'] + f' · evalúa en {_num(x)}',
-        'contexto': base['contexto'] + f'\n\nEstima $f({_num(x)})$ con (18.3).',
-        'datos': {**d, 'x': float(x)},
-        'f': ref,
-    })
-    return base
+        'titulo': f'Parábola por ({x0}, {f0}), ({x1}, {f1}) y ({x2}, {f2})',
+        'contexto': ('Ajusta la parábola que pasa por\n\n'
+                     + _tabla([x0, x1, x2], [f0, f1, f2])
+                     + f'\n\nEstima $f({_num(x)})$ con (18.3).'),
+        'datos': {'x0': float(x0), 'f0': float(f0), 'x1': float(x1),
+                  'f1': float(f1), 'x2': float(x2), 'f2': float(f2),
+                  'x': float(x), 'x3': float(x3), 'f3': float(f3)},
+        'f': float(y),
+    }
 
 
 def _ej_error_interp(rng):
+    """Error de la parábola con un cuarto nodo, ecuación (18.18)."""
     xs = sorted(int(v) for v in rng.choice(range(1, 7), size=4, replace=False))
     coefs = [int(rng.integers(1, 4)) for _ in range(4)]
     ys = [sum(c * x ** k for k, c in enumerate(coefs)) for x in xs]
@@ -207,12 +196,14 @@ def _ej_error_interp(rng):
     return {
         'tipo': 'ERROR_INTERP',
         'titulo': f'Error con punto extra en $x = {_num(x)}$',
-        'contexto': ('Con los nodos $x = %s$, la tercera diferencia dividida es '
-                     '$f[x_3,x_2,x_1,x_0] = %s$.\n\n'
-                     'Estima el error de la parábola en $x = %s$ con (18.18).'
-                     % (_lista(xs), _num(dif), _num(x))),
+        'contexto': ('Con los nodos\n\n' + _tabla(xs, ys)
+                     + '\n\nla tercera diferencia dividida es $f[x_3,x_2,x_1,x_0]'
+                       f' = {_num(dif)}$.\n\n'
+                       f'Estima el error de la parábola en $x = {_num(x)}$ con '
+                       '(18.18).'),
         'datos': {'nodos': [float(v) for v in xs[:3]], 'x': x,
-                  'dif': dif, 'x_todos': [float(v) for v in xs]},
+                  'dif': dif, 'x_todos': [float(v) for v in xs],
+                  'y': [float(v) for v in ys]},
         'R': ref,
     }
 
@@ -465,7 +456,6 @@ def _ej_fourier(rng):
 
 MANO_FABRICA = {
     'INTERP_LINEAL': [_ej_interp_lineal],
-    'COEF_CUADRATICOS': [_ej_coef_cuadraticos],
     'INTERP_CUADRATICA': [_ej_interp_cuadratica],
     'ERROR_INTERP': [_ej_error_interp],
     'NEWTON_TABLA': [_ej_newton_tabla],
@@ -484,8 +474,6 @@ MANO_FABRICA = {
 
 MANO_REPORTE = {
     'INTERP_LINEAL': (('f(x)', lambda ej: ej['f']),),
-    'COEF_CUADRATICOS': (('b_1', lambda ej: ej['b1']),
-                         ('b_2', lambda ej: ej['b2'])),
     'INTERP_CUADRATICA': (('f(x)', lambda ej: ej['f']),),
     'ERROR_INTERP': (('R_2', lambda ej: ej['R']),),
     'NEWTON_TABLA': (('b_0', lambda ej: ej['b'][0]),

@@ -175,7 +175,10 @@ def _es_escalar(x):
 
 
 def _comparar_estructura(a, e, tol):
-    """Compara recursivamente números, listas, tuplas y matrices."""
+    """Compara recursivamente números, listas, tuplas, matrices y ``None``."""
+    if e is None:
+        # ``None`` significa "no aplica" (por ejemplo, un error que no se pidió).
+        return a is None
     if isinstance(e, (list, tuple)):
         if hasattr(a, 'tolist') and not isinstance(a, (list, tuple)):
             a = a.tolist()

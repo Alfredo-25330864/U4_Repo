@@ -28,46 +28,79 @@ def _vector(valores):
 # ======================================================================
 # 4.1 — Interpolación lineal y cuadrática
 # ======================================================================
-def interpolacion_lineal(x0, f0, x1, f1, x):
-    """Ecuación (18.2): recta que pasa por dos nodos, evaluada en ``x``."""
-    x0, f0, x1, f1, x = map(_racional, (x0, f0, x1, f1, x))
-    if x1 == x0:
-        raise ZeroDivisionError('los dos nodos deben ser distintos')
-    return sp.nsimplify(f0 + (f1 - f0) / (x1 - x0) * (x - x0))
-
-
-def coeficientes_cuadraticos(x0, f0, x1, f1, x2, f2):
-    """``[b0, b1, b2]`` de la parábola (18.3), con (18.4)–(18.6)."""
-    x0, f0, x1, f1, x2, f2 = map(_racional, (x0, f0, x1, f1, x2, f2))
-    if x0 == x1 or x1 == x2 or x0 == x2:
-        raise ZeroDivisionError('los tres nodos deben ser distintos')
-    b0 = f0
-    b1 = sp.nsimplify((f1 - f0) / (x1 - x0))
-    pend2 = (f2 - f1) / (x2 - x1)
-    b2 = sp.nsimplify((pend2 - b1) / (x2 - x0))
-    return [sp.nsimplify(b0), b1, b2]
-
-
-def interpolacion_cuadratica(x0, f0, x1, f1, x2, f2, x):
-    """Parábola por tres nodos en forma anidada (18.3).
-
-    Llama a ``coeficientes_cuadraticos``: la pieza suelta y el método completo
-    no se programan dos veces.
-    """
-    b0, b1, b2 = coeficientes_cuadraticos(x0, f0, x1, f1, x2, f2)
-    x0, x1, x = _racional(x0), _racional(x1), _racional(x)
-    return sp.nsimplify(b0 + b1 * (x - x0) + b2 * (x - x0) * (x - x1))
-
-
 def error_estimado_interpolacion(dif_siguiente, nodos, x):
     """Estimación del error con un punto extra, ecuación (18.18).
 
-    ``Rn = f[x_{n+1},...,x_0] * prod(x - x_i)``.
+    ``Rn = f[x_{n+1},...,x_0] * prod(x - x_i)``. ``nodos`` son las abscisas de
+    los nodos que ya se usaron en la interpolación.
     """
     producto = sp.Integer(1)
     for xi in nodos:
         producto *= (_racional(x) - _racional(xi))
     return sp.nsimplify(_racional(dif_siguiente) * producto)
+
+
+def _diferencias(x, y):
+    """Las tres primeras diferencias divididas: d01, d12, d012."""
+    x0, y0, x1, y1, x2, y2 = map(_racional, (x[0], y[0], x[1], y[1], x[2], y[2]))
+    d01 = (y1 - y0) / (x1 - x0)
+    d12 = (y2 - y1) / (x2 - x1)
+    return d01, d12, sp.nsimplify((d12 - d01) / (x2 - x0))
+
+
+def interpolacion_lineal(x0, y0, x1, y1, x, x2=None, y2=None):
+    """Recta por dos nodos, ecuación (18.2). Devuelve ``(y, error)``.
+
+    Si se dan ``x2`` e ``y2`` (un tercer dato), el error se estima con (18.18):
+    ``R1 = f[x2,x1,x0] * (x-x0) * (x-x1)``. Si no, ``error`` es ``None``.
+    """
+    x0, y0, x1, y1, x = map(_racional, (x0, y0, x1, y1, x))
+    if x1 == x0:
+        raise ZeroDivisionError('los dos nodos deben ser distintos')
+    y = sp.nsimplify(y0 + (y1 - y0) / (x1 - x0) * (x - x0))
+
+    error = None
+    if x2 is not None and y2 is not None:
+        _d01, _d12, d012 = _diferencias((x0, x1, x2), (y0, y1, y2))
+        error = sp.nsimplify(d012 * (x - x0) * (x - x1))
+
+    return (float(y), None if error is None else float(error))
+
+
+def coeficientes_cuadraticos(x0, y0, x1, y1, x2, y2):
+    """``[b0, b1, b2]`` de la parábola (18.3), con (18.4)–(18.6).
+
+    Se calcula con dos pendientes, que es la forma de las ecuaciones (18.5) y
+    (18.6):  ``m1 = (y1-y0)/(x1-x0)``, ``m2 = (y2-y1)/(x2-x1)``,
+    ``b2 = (m2-m1)/(x2-x0)``.
+    """
+    x0, y0, x1, y1, x2, y2 = map(_racional, (x0, y0, x1, y1, x2, y2))
+    if x0 == x1 or x1 == x2 or x0 == x2:
+        raise ZeroDivisionError('los tres nodos deben ser distintos')
+    d01, _d12, d012 = _diferencias((x0, x1, x2), (y0, y1, y2))
+    return [sp.nsimplify(y0), sp.nsimplify(d01), d012]
+
+
+def interpolacion_cuadratica(x0, y0, x1, y1, x2, y2, x, x3=None, y3=None):
+    """Parábola por tres nodos, ecuación (18.3). Devuelve ``(y, error)``.
+
+    Si se dan ``x3`` e ``y3`` (un cuarto dato), el error se estima con (18.18):
+    ``R2 = f[x3,x2,x1,x0] * (x-x0)(x-x1)(x-x2)``. Si no, ``error`` es ``None``.
+    """
+    b0, b1, b2 = coeficientes_cuadraticos(x0, y0, x1, y1, x2, y2)
+    x0, x1, x2, x = map(_racional, (x0, x1, x2, x))
+    y = sp.nsimplify(b0 + b1 * (x - x0) + b2 * (x - x0) * (x - x1))
+
+    error = None
+    if x3 is not None and y3 is not None:
+        _d01, _d12, d012 = _diferencias((x0, x1, x2), (y0, y1, y2))
+        x3, y3 = _racional(x3), _racional(y3)
+        d123 = sp.nsimplify(((y3 - _racional(y2)) / (x3 - x2) - _d12)
+                            / (x3 - x1))
+        dif4 = sp.nsimplify((d123 - d012) / (x3 - x0))
+        error = sp.nsimplify(dif4 * (x - x0) * (x - x1) * (x - x2))
+
+    return (float(y), None if error is None else float(error))
 
 
 # ======================================================================

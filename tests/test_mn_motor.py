@@ -42,6 +42,41 @@ class TestComun(unittest.TestCase):
 
 
 class TestSolversU4(unittest.TestCase):
+    def test_lineal_devuelve_valor_y_sin_error(self):
+        y, error = solvers.interpolacion_lineal(1, 0, 6, 1.791759, 2)
+        self.assertAlmostEqual(y, 0.3583519, places=6)
+        self.assertIsNone(error)
+
+    def test_lineal_estima_el_error_con_tercer_dato(self):
+        y, error = solvers.interpolacion_lineal(1, 0, 4, 1.386294, 2,
+                                                x2=6, y2=1.791759)
+        self.assertAlmostEqual(y, 0.4620981, places=6)
+        # R1 = f[x2,x1,x0]*(x-x0)(x-x1) = -0.0518731 * (1)(-2)
+        self.assertAlmostEqual(error, 0.1037462, places=6)
+
+    def test_lineal_sin_error_extra_si_el_error_real_es_cero(self):
+        # Datos de una recta: el error estimado debe salir 0.
+        y, error = solvers.interpolacion_lineal(1, 3, 3, 7, 2, x2=5, y2=11)
+        self.assertAlmostEqual(y, 5.0, places=9)
+        self.assertAlmostEqual(error, 0.0, places=9)
+
+    def test_cuadratica_devuelve_valor_y_sin_error(self):
+        y, error = solvers.interpolacion_cuadratica(0, 1, 1, 3, 2, 7, 1.5)
+        self.assertAlmostEqual(y, 4.75, places=9)
+        self.assertIsNone(error)
+
+    def test_cuadratica_estima_el_error_con_cuarto_dato(self):
+        # parábola x^2 + x + 1 con un cuarto nodo tomado de la misma parábola:
+        # el error debe salir 0.
+        y, error = solvers.interpolacion_cuadratica(
+            0, 1, 1, 3, 2, 7, 1.5, x3=3, y3=13)
+        self.assertAlmostEqual(y, 4.75, places=9)
+        self.assertAlmostEqual(error, 0.0, places=9)
+
+    def test_coeficientes_cuadraticos_dos_pendientes(self):
+        b0, b1, b2 = solvers.coeficientes_cuadraticos(0, 1, 1, 3, 2, 7)
+        self.assertEqual([float(b0), float(b1), float(b2)], [1.0, 2.0, 1.0])
+
     def test_newton_cuadratica_libro(self):
         x = [1, 4, 6]
         y = [0, 1.386294, 1.791759]
@@ -161,28 +196,38 @@ class TestMotor(unittest.TestCase):
             mn_motor.usar_cuaderno(cuad, tid)
             t = mn_motor.generar_tarea("m16330887@hermosillo.tecnm.mx", "Prueba")
             self.assertTrue(t['preguntas'], cuad)
-            for i in range(len(t['preguntas'])):
-                t['respuestas'][i] = None
-            puntos = sum(califica.acierto(q, None, marco) for q in t['preguntas'])
+            for i, q in enumerate(t['preguntas']):
+                # Un alumno perfecto: contesta bien la opción múltiple y define
+                # las funciones. Cada cuaderno usa el tipo que le corresponde.
+                t['respuestas'][i] = q['esperado'] if q['tipo'] == 'mcq' else None
+            puntos = sum(califica.acierto(q, t['respuestas'][i], marco)
+                         for i, q in enumerate(t['preguntas']))
             self.assertEqual(puntos, len(t['preguntas']), cuad)
 
     def test_alumno_sin_funciones_no_puntua(self):
+        for cuad, tid in self.CUADERNOS:
+            mn_motor.usar_cuaderno(cuad, tid)
+            t = mn_motor.generar_tarea("m16330887@hermosillo.tecnm.mx", "Prueba")
+            for i in range(len(t['preguntas'])):
+                t['respuestas'][i] = None
+            self.assertEqual(
+                sum(califica.acierto(q, None, {}) for q in t['preguntas']), 0, cuad)
+
+    def test_cuaderno_01_pregunta_teoria_no_codigo(self):
         mn_motor.usar_cuaderno(*self.CUADERNOS[0])
         t = mn_motor.generar_tarea("m16330887@hermosillo.tecnm.mx", "Prueba")
-        self.assertEqual(sum(califica.acierto(q, None, {}) for q in t['preguntas']), 0)
+        self.assertTrue(all(q['tipo'] == 'mcq' for q in t['preguntas']))
+        for q in t['preguntas']:
+            self.assertGreaterEqual(len(q['opciones']), 3)
+            self.assertIn(q['esperado'], range(len(q['opciones'])))
 
-    def test_casos_ocultos_distintos_a_la_actividad_a_mano(self):
-        import mn_motor.ejercicios_u4 as cat
-        import mn_motor.mano as mano
-        alumno = "m16330887@hermosillo.tecnm.mx"
-        mn_motor.usar_cuaderno(*self.CUADERNOS[0])
-        t = mn_motor.generar_tarea(alumno, "Prueba")
-        q = t['preguntas'][0]
-        entrada_mano = cat.elegir_mano(
-            'INTERP_LINEAL', comun.rng_de(alumno, mano._sal('INTERP_LINEAL')))['datos']
-        primera_mano = (entrada_mano['x0'], entrada_mano['f0'],
-                        entrada_mano['x1'], entrada_mano['f1'], entrada_mano['x'])
-        self.assertNotIn(primera_mano, [c[0] for c in q['casos']])
+    def test_practica_por_nombre_de_metodo(self):
+        """`practica` funciona aunque el cuaderno no tenga preguntas de código."""
+        from preguntas._fabrica import ejemplo_de
+        entrada, esperado = ejemplo_de('INTERP_LINEAL')
+        self.assertIsInstance(esperado, list)
+        self.assertEqual(len(esperado), 2)       # (y, error)
+        self.assertIsNone(esperado[1])           # sin tercer dato no hay error
 
 
 class TestMano(unittest.TestCase):

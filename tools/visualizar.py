@@ -88,6 +88,8 @@ def _lab_error_interp(ej):
             label=r"$R(x)=f[x_3,x_2,x_1,x_0]\prod(x-x_i)$")
     ax.plot([d['x']], [ej['R']], 's', ms=9, label=f"R = {ej['R']:.4f}")
     ax.plot(d['nodos'], [0, 0, 0], 'o', ms=8, label='nodos de la parábola')
+    ax.plot([d['x_todos'][3]], [0], 'D', ms=9, color='tab:red',
+            label='cuarto dato (estima el error)')
     ax.axhline(0, color='k', lw=0.8)
     ax.axvline(d['x'], color='0.7', ls=':')
     _estilo(ax, 'Error de la interpolación (18.18)', ylabel='R(x)')
@@ -250,7 +252,6 @@ def _lab_fourier(ej):
 # ---------------------------------------------------------------------
 _LABS = {
     'INTERP_LINEAL': _lab_lineal,
-    'COEF_CUADRATICOS': _lab_cuadratica,
     'INTERP_CUADRATICA': _lab_cuadratica,
     'ERROR_INTERP': _lab_error_interp,
     'NEWTON_TABLA': _lab_newton_tabla,

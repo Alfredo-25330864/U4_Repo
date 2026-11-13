@@ -46,6 +46,10 @@ _COLA = '''
 # =====================================================================
 _MODULOS_PY = {modulos!r}
 
+# Recursos (.md de las preguntas) incrustados: en el clon del alumno no
+# existen en disco, así que el motor los sirve desde aquí.
+_RECURSOS = {recursos!r}
+
 
 def _instalar(modulos):
     """Crea los módulos en memoria, sin tocar el disco ni sys.path."""
@@ -96,11 +100,29 @@ import mn_motor.ajustes as _ajustes
 _ajustes.CUADERNO = {cuaderno!r}
 _ajustes.TAREA_ID = {tarea_id!r}
 
+import mn_motor.recursos as _recursos
+_recursos.EMPAQUETADOS.update(_RECURSOS)
+
 import mn_motor as _motor
 
 __all__ = list(_motor.__all__)
 globals().update({{nombre: getattr(_motor, nombre) for nombre in _motor.__all__}})
 '''
+
+
+def _leer_md(carpeta, prefijo):
+    """Recursos .md de un cuaderno: {ruta relativa al repo: texto}."""
+    recursos = {}
+    for raiz, subcarpetas, archivos in os.walk(carpeta):
+        subcarpetas[:] = [d for d in subcarpetas if d != '__pycache__']
+        for archivo in sorted(archivos):
+            if not archivo.endswith('.md'):
+                continue
+            ruta = os.path.join(raiz, archivo)
+            clave = os.path.relpath(ruta, RAIZ).replace(os.sep, '/')
+            with open(ruta, encoding='utf-8') as f:
+                recursos[clave] = f.read()
+    return recursos
 
 
 def _leer_py(carpeta, prefijo):
@@ -142,12 +164,12 @@ def _verificar(codigo, cuaderno, tarea_id):
         raise AssertionError(f'la tarea se envía como {tarea["tarea"]!r}')
 
     otra = ns['generar_tarea']('m99999999@hermosillo.tecnm.mx', 'Otro')
-    firma = [[c[0] for c in q['casos']] for q in tarea['preguntas']]
-    firma2 = [[c[0] for c in q['casos']] for q in otra['preguntas']]
+    firma = [_firma(q) for q in tarea['preguntas']]
+    firma2 = [_firma(q) for q in otra['preguntas']]
     if firma == firma2:
-        raise AssertionError('dos alumnos recibieron los mismos casos')
+        raise AssertionError('dos alumnos recibieron exactamente lo mismo')
 
-    # Alumno perfecto: las funciones de referencia del motor empaquetado.
+    # Alumno perfecto: contesta bien lo teórico y define las funciones.
     import importlib
     u3 = importlib.import_module('mn_motor.solvers_u3')
     u4 = importlib.import_module('mn_motor.solvers_u4')
@@ -158,22 +180,39 @@ def _verificar(codigo, cuaderno, tarea_id):
             marco[nombre] = getattr(u4, nombre)
         elif hasattr(u3, nombre):
             marco[nombre] = getattr(u3, nombre)
+
     puntos = 0
-    for q in tarea['preguntas']:
-        q['respuestas'] = None
+    for i, q in enumerate(tarea['preguntas']):
+        if q['tipo'] == 'mcq':
+            tarea['respuestas'][i] = q['esperado']
+            puntos += 1
+            continue
+        tarea['respuestas'][i] = None
         fn = marco.get(q['funcion'])
         if fn is None:
             raise AssertionError(f'falta la referencia de {q["funcion"]!r}')
-        acierto = all(_cerca(fn(*c[0]), c[1]) for c in q['casos'])
-        puntos += 1 if acierto else 0
+        if all(_cerca(fn(*c[0]), c[1]) for c in q['casos']):
+            puntos += 1
     if puntos != len(tarea['preguntas']):
         raise AssertionError(f'el alumno perfecto sacó {puntos}/{len(tarea["preguntas"])}')
 
     return len(tarea['preguntas'])
 
 
+def _firma(q):
+    """Lo que debe cambiar entre dos alumnos (para detectar copias)."""
+    if q['tipo'] == 'funcion':
+        return (q['funcion'], [c[0] for c in q['casos']])
+    if q['tipo'] == 'mcq':
+        # Las opciones se barajan por alumno: la firma es el orden que ve cada uno.
+        return ('mcq', q['id'], tuple(q['opciones']))
+    return (q['tipo'], q.get('id'))
+
+
 def _cerca(a, b):
     """Comparación local, sin depender del motor ya cargado."""
+    if b is None:
+        return a is None
     if isinstance(b, (list, tuple)):
         if hasattr(a, 'tolist'):
             a = a.tolist()
@@ -202,7 +241,9 @@ def construir_blob(cuaderno, salida=None, verboso=True):
         return False, f'falta preguntas/{cuaderno}/__init__.py'
 
     tarea_id = CUADERNOS[cuaderno]
-    codigo = _COLA.format(modulos=modulos, cuaderno=cuaderno, tarea_id=tarea_id)
+    recursos = _leer_md(carpeta, 'preguntas.' + cuaderno)
+    codigo = _COLA.format(modulos=modulos, recursos=recursos,
+                          cuaderno=cuaderno, tarea_id=tarea_id)
 
     try:
         n = _verificar(codigo, cuaderno, tarea_id)
@@ -222,7 +263,7 @@ def construir_blob(cuaderno, salida=None, verboso=True):
     if verboso:
         print(f'{cuaderno}')
         print(f'  preguntas   : {n}')
-        print(f'  módulos     : {len(modulos)}')
+        print(f'  módulos     : {len(modulos)} · recursos: {len(recursos)}')
         print(f'  empaquetado : {len(codigo):,} → {len(blob):,} caracteres '
               f'({len(blob) / len(codigo):.2f}x)')
         print(f'  salida      : {os.path.relpath(destino, RAIZ)}')
