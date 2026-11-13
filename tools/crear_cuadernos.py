@@ -278,7 +278,7 @@ El método completo debe **llamar** a sus piezas: no repitas la cuenta.
 from ejercicios.{archivo.replace('/', '.').replace('.py', '')} import *
 """)
     if practica:
-        code(nb, f'#@title ▶️ Prueba tu función con el ejemplo genérico\npractica("f_{metodo.lower()}")')
+        code(nb, f'#@title ▶️ Prueba tu función con un ejemplo\npractica("{metodo}")')
     code(nb, f'#@title 📊 Laboratorio · {titulo}\nvisualizar.laboratorio("{metodo}", EJ_{n})')
 
 
@@ -292,39 +292,90 @@ NB01 = [
 $$f_1(x)=f(x_0)+\frac{f(x_1)-f(x_0)}{x_1-x_0}(x-x_0) \tag{18.2}$$
 
 El cociente es la pendiente y, además, una aproximación a la primera derivada.
-Cuando más cerca estén los nodos, mejor representa la recta a la curva.""",
+Cuanto más cerca estén los nodos, mejor representa la recta a la curva.
+
+**Dos salidas.** La función devuelve `(y, error)`. El error sólo se puede
+estimar si hay un tercer dato:
+
+$$R_1\cong f[x_2,x_1,x_0]\,(x-x_0)(x-x_1) \tag{18.18}$$
+
+Mientras no escribas `error_estimado_interpolacion` (método 3), regresa
+`(y, None)`.""",
      "interpolacion/interpolacion_lineal.py", "0.0"),
 
-    ("COEF_CUADRATICOS", "Coeficientes de la parábola",
+    ("INTERP_CUADRATICA", "Interpolación cuadrática",
      r"""Con tres puntos se ajusta el único polinomio de segundo grado:
 
 $$f_2(x)=b_0+b_1(x-x_0)+b_2(x-x_0)(x-x_1) \tag{18.3}$$
 
-donde
+Los coeficientes salen de dos pendientes:
 
-$$b_0=f(x_0) \tag{18.4}$$
+$$b_0=y_0 \tag{18.4}$$
 
-$$b_1=\frac{f(x_1)-f(x_0)}{x_1-x_0} \tag{18.5}$$
+$$b_1=\frac{y_1-y_0}{x_1-x_0} \tag{18.5}$$
 
-$$b_2=\frac{\dfrac{f(x_2)-f(x_1)}{x_2-x_1}-\dfrac{f(x_1)-f(x_0)}{x_1-x_0}}{x_2-x_0} \tag{18.6}$$
+$$b_2=\frac{\dfrac{y_2-y_1}{x_2-x_1}-\dfrac{y_1-y_0}{x_1-x_0}}{x_2-x_0} \tag{18.6}$$
 
-Los dos primeros términos son la recta; $b_2$ aporta la curvatura.""",
-     "interpolacion/coeficientes_cuadraticos.py", "0.0, 0.0"),
+Los dos primeros términos son la recta; $b_2$ aporta la curvatura. Todo se
+calcula dentro de la misma función: no hace falta un paso aparte para los
+coeficientes.
 
-    ("INTERP_CUADRATICA", "Interpolación cuadrática",
-     r"""Ya con $b_0, b_1, b_2$ se evalúa (18.3) en el punto pedido. Esta
-función **debe llamar** a `coeficientes_cuadraticos`: la pieza y el método no
-se programan dos veces.""",
+**Dos salidas.** Devuelve `(y, error)`, y el error sólo aparece con un cuarto
+dato:
+
+$$R_2\cong f[x_3,x_2,x_1,x_0]\,(x-x_0)(x-x_1)(x-x_2) \tag{18.18}$$""",
      "interpolacion/interpolacion_cuadratica.py", "0.0"),
 
     ("ERROR_INTERP", "Error con un punto extra",
-     r"""Si se tiene un nodo más de lo necesario, se estima el error:
+     r"""Un dato más de los necesarios sirve para **estimar** el error sin
+conocer la función:
 
 $$R_n\cong f[x_{n+1},x_n,\dots,x_0]\prod_{i=0}^{n}(x-x_i) \tag{18.18}$$
 
-Es la diferencia entre la predicción de grado $n+1$ y la de grado $n$.""",
+Es la diferencia entre la predicción de grado $n+1$ y la de grado $n$
+(ecuación 18.19). Cuando termines esta función, vuelve a tus dos métodos y
+activa el cálculo del error.""",
      "interpolacion/error_estimado_interpolacion.py", "0.0"),
 ]
+
+# Celdas extra del cuaderno 01: conectar el error con los dos métodos.
+CONECTAR_ERROR = r'''#@title 🔗 Conecta el error con tus métodos
+# Ya tienes error_estimado_interpolacion. Vuelve a tus dos funciones y activa
+# el cálculo del error: con el punto extra deben devolver (y, error).
+d = EJ_3["datos"]
+x0, x1, x2 = d["nodos"]
+x3 = d["x_todos"][3]
+y0, y1, y2, y3 = d["y"]
+
+print("nodos:", d["x_todos"], "· valores:", d["y"])
+print("punto a estimar: x =", d["x"], "\n")
+
+try:
+    print("cuadrática sin cuarto dato:", interpolacion_cuadratica(x0, y0, x1, y1, x2, y2, d["x"]))
+    print("cuadrática con cuarto dato:", interpolacion_cuadratica(
+        x0, y0, x1, y1, x2, y2, d["x"], x3=x3, y3=y3))
+except NotImplementedError as exc:
+    print("⏳ Todavía falta una de tus funciones:", exc)
+except TypeError as exc:
+    print("⚠️ Revisa la firma de tu función (debe aceptar x3 e y3):", exc)
+
+print("\nEl valor de referencia de tu actividad a mano no se muestra aquí:")
+print("compáralo con lo que reportaste en la celda ✅ del método 3.")
+'''
+
+
+def preguntas_teoricas(nb, cuantas):
+    """Celdas de preguntas teóricas (opción múltiple)."""
+    md(nb, """
+---
+
+## 🧠 Preguntas teóricas
+
+Son de criterio: el código ya lo escribiste y lo comprobaste con `practica(...)`.
+Aquí se evalúa si entiendes **por qué** funciona el método.
+""")
+    for i in range(1, cuantas + 1):
+        code(nb, f'#@title 🧠 Pregunta {i}\npregunta({i})')
 
 # ======================================================================
 # Cuaderno 02 — Newton y Lagrange
@@ -471,12 +522,13 @@ def preguntas_celda(nb, n, metodo):
              f'pregunta({n})')
 
 
-def construir(nb, metodos, prefijo):
+def construir(nb, metodos, prefijo, preguntas_por_metodo=True):
     for n, item in enumerate(metodos, start=1):
         metodo, titulo, teoria, archivo, args = item[:5]
         con_practica = item[5] if len(item) > 5 else True
         bloque(nb, n, metodo, titulo, teoria, archivo, args, con_practica)
-        preguntas_celda(nb, n, titulo)
+        if preguntas_por_metodo:
+            preguntas_celda(nb, n, titulo)
     return nb
 
 
@@ -575,32 +627,37 @@ def main():
         ("U4_01_Interpolacion.ipynb", "u4_01_interpolacion",
          "U4_01_Interpolacion", "📐 Cuaderno 01 — Interpolación",
          "Tema 4.1. Cada método sigue el mismo camino: **explicación → a mano → "
-         "programar → laboratorio**.",
-         NB01, False),
+         "programar → laboratorio**. Las preguntas finales son teóricas.",
+         NB01, False, 5),
         ("U4_02_Newton_Lagrange.ipynb", "u4_02_newton_lagrange",
          "U4_02_Newton_Lagrange", "🌳 Cuaderno 02 — Newton y Lagrange",
          "Tema 4.2. Dos formas del **mismo** polinomio, más la estimación del "
          "error.",
-         NB02, False),
+         NB02, False, 0),
         ("U4_03_Minimos_Cuadrados.ipynb", "u4_03_minimos_cuadrados",
          "U4_03_Minimos_Cuadrados", "📉 Cuaderno 03 — Mínimos cuadrados",
          "Tema 4.3. Cuando los datos traen ruido no se interpola: se ajusta.",
-         NB03, False),
+         NB03, False, 0),
         ("U4_04_Casos.ipynb", "u4_04_casos", "U4_04_Casos",
          "🧩 Cuaderno 04 — Casos (Unidades 3 y 4)",
          "Tema 4.4. Casos que combinan **sistemas lineales** (Unidad 3) con "
          "**ajuste de curvas** (Unidad 4), y la serie de Fourier como tarea "
          "extra.",
-         NB04, True),
+         NB04, True, 0),
     ]
 
-    for archivo, cuaderno, tarea_id, titulo, subtitulo, metodos, con_casos in especificaciones:
+    for (archivo, cuaderno, tarea_id, titulo, subtitulo,
+         metodos, con_casos, n_teoricas) in especificaciones:
         nb = nuevo(titulo, subtitulo)
         code(nb, ENTORNO.format(cuaderno=cuaderno, tarea_id=tarea_id))
         code(nb, IDENTIFICACION)
         if con_casos:
             casos(nb)
-        construir(nb, metodos, cuaderno)
+        taller = n_teoricas > 0
+        construir(nb, metodos, cuaderno, preguntas_por_metodo=not taller)
+        if taller:
+            code(nb, CONECTAR_ERROR)
+            preguntas_teoricas(nb, n_teoricas)
         cierres(nb, metodos)
         nbf.write(nb, os.path.join(SALIDA, archivo))
         print("escrito:", archivo, f"({len(nb.cells)} celdas)")

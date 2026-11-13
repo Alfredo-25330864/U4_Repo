@@ -18,7 +18,7 @@ verificación a mano, verificación de preguntas, envío y consulta del envío.
 
 | # | Cuaderno | Métodos |
 |---|---|---|
-| **01** | **Interpolación** | lineal, coeficientes de la parábola, cuadrática, error con punto extra |
+| **01** | **Interpolación** | lineal · cuadrática · error con punto extra (los dos primeros devuelven `(y, error)`) |
 | **02** | **Newton y Lagrange** | tabla de diferencias, coeficientes, evaluación, Lagrange, error |
 | **03** | **Mínimos cuadrados** | $S_r$, regresión lineal, cuadrática, $s_{y/x}$, $r^2$ |
 | **04** | **Casos (U3 + U4)** | sistema 3×3 por Gauss (repaso) · calibración con ecuaciones normales resueltas por Gauss · serie de Fourier (tarea extra) |
@@ -36,8 +36,11 @@ verificación a mano, verificación de preguntas, envío y consulta del envío.
 
 ### 🧩 Qué se califica
 
-- Las **preguntas de programar** (una por método) con casos ocultos: no son los
-  datos de tu actividad a mano, así que copiar el enunciado no sirve.
+- **Cuaderno 01:** cinco preguntas **teóricas** de opción múltiple. El código se
+  escribe en `ejercicios/` y se comprueba con `practica(...)`, así que la
+  calificación evalúa el criterio, no la transcripción del algoritmo.
+- **Cuadernos 02–04:** las preguntas de programar comparan tu función con casos
+  ocultos que no son los de tu actividad a mano.
 - Las **actividades a mano** se verifican localmente y quedan como evidencia;
   no restan puntos si te equivocas, pero sí te avisan.
 
