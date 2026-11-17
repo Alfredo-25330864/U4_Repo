@@ -31,11 +31,17 @@ f_n(x)={}&b_0+b_1(x-x_0)+b_2(x-x_0)(x-x_1)+\cdots\\
 
 Los coeficientes son las **diferencias divididas** evaluadas en los nodos:
 
-$$b_0=f(x_0),\quad b_1=f[x_1,x_0],\quad b_2=f[x_2,x_1,x_0],\quad
-\dots,\quad b_n=f[x_n,x_{n-1},\dots,x_0]. \tag{18.8–18.11}$$
+$$\begin{aligned}
+b_0=&f(x_0),\\
+b_1=&f[x_1,x_0],\\
+b_2=&f[x_2,x_1,x_0],\\
+\dots,\\ 
+b_n=&f[x_n,x_{n-1},\dots,x_0].
+\end{aligned}
+\tag{18.8–18.11}$$
 
 La ventaja frente a la forma monomial $a_0+a_1x+\cdots+a_nx^n$ es que agregar
-un nodo sólo agrega **un término**; no hay que resolver un sistema ni
+un nodo solo agrega **un término**; no hay que resolver un sistema ni
 recalcular todo.
 
 ---

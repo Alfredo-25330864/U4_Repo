@@ -43,7 +43,7 @@ def pregunta(n, tarea_=None):
             value=None,
             layout=w.Layout(width='100%'),
         )
-        texto_boton = 'Elegir ' + ' / '.join(letras) + ' y guardar'
+        texto_boton = 'Guardar respuesta'
     else:
         display(Markdown(encabezado))
         if q['tipo'] == 'matriz':
