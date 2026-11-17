@@ -45,14 +45,14 @@ $n+1$ puntos con abscisas distintas es **único**.
 
 ### <a id="sec-2"></a>2. Interpolación lineal
 
-**📘 Teoría.** Es unir dos puntos con una recta. Por triángulos semejantes
+Es unir dos puntos con una recta. Por triángulos semejantes
 (figura 18.2 del libro),
 
 $$\frac{f_1(x)-f(x_0)}{x-x_0}=\frac{f(x_1)-f(x_0)}{x_1-x_0},$$
 
 y al despejar se obtiene la fórmula de interpolación lineal,
 
-$$f_1(x)=f(x_0)+\frac{f(x_1)-f(x_0)}{x_1-x_0}(x-x_0). \tag{18.2}$$
+$$f_1(x)=f(x_0)+\frac{f(x_1)-f(x_0)}{x_1-x_0}(x-x_0).$$
 
 El cociente $[f(x_1)-f(x_0)]/(x_1-x_0)$ es la pendiente de la recta y, además,
 una aproximación en diferencias divididas finitas a la primera derivada.
