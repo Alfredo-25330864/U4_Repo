@@ -126,30 +126,37 @@ U4_Repo/
 
 ### En Google Colab
 
-1. Haz un **fork público** del repositorio del curso (así las horas de
-   Codespaces se cobran a tu cuenta, no al repositorio del profesor).
-2. Abre el cuaderno desde tu fork (o súbelo a Drive).
-3. Ejecuta la **primera celda**. Detecta que estás en Colab, monta tu Drive y te
-   pide **una sola vez** el enlace de tu fork. Lo guarda en
-   `MyDrive/CursoMN/u4_repo.json`: en las siguientes sesiones lo reutiliza sin
-   volver a preguntar (y te deja cambiarlo con un botón).
-4. Clona o actualiza el repo en `MyDrive/CursoMN/U4_Repo`, carga el blob de
-   `grader/` y continúa.
+1. Haz un **fork público** del repositorio del curso y trabaja **en tu fork**:
+   edita los archivos directamente en GitHub y confirma cada cambio (commit).
+   No hace falta Codespaces.
+2. Abre el cuaderno desde tu fork en Colab.
+3. Ejecuta la **primera celda**. Monta tu Drive y te pide **una sola vez** el
+   enlace de tu fork; lo guarda en `MyDrive/CursoMN/u4_repo.json` y en las
+   siguientes sesiones lo reutiliza sin volver a preguntar.
+4. Cada vez que ejecutes esa celda se **actualiza sola**, en dos pasos:
+   - tus commits de GitHub (`merge --ff-only` con tu fork);
+   - el material del curso desde `upstream/main` (`lib/`, `grader/`, `config/`,
+     `docs/`, `ejercicios/`, `tools/`), aunque tu fork esté atrasado.
+
+   Vuelve a ejecutarla después de cada commit y sigue con la celda de
+   identificación.
 
 > 📦 El motor viaja **empaquetado** en `grader/<cuaderno>.txt`: el cuaderno no
-> depende de que tu fork tenga `lib/mn_motor`.
+> depende de que tu fork tenga `lib/mn_motor`. Las credenciales del backend
+> también viajan ahí, así que un fork viejo nunca usa un token caducado.
 
-### En GitHub Codespaces
+> 🧪 Para probar el camino de Colab sin subir nada a Drive:
+> `python tools/simular_colab.py` monta un Drive falso y ejecuta las celdas
+> desde un directorio que no es el repositorio (igual que `/content`).
+> `--ref HEAD` simula lo último publicado, `--clonar` prueba el refresco real
+> contra GitHub y `--backend local` usa un Apps Script falso, sin escribir en
+> la hoja real.
 
-El repo incluye `.devcontainer/devcontainer.json` y `requirements.txt`. Al abrir
-el botón **Code → Codespaces**, el contenedor instala NumPy, SciPy, SymPy,
-Matplotlib, JupyterLab y las herramientas de notebooks.
+### En GitHub Codespaces (opcional)
 
-> ⏱️ **Horas:** un Codespace de 2 núcleos consume 2 horas de cómputo por cada
-> hora de reloj. Las 120 horas-núcleo del plan gratuito equivalen a ~60 horas
-> reales al mes. Cierra la pestaña y usa **Stop current codespace** al terminar;
-> un Codespace detenido no consume cómputo, sólo almacenamiento. El tiempo de
-> inactividad se puede configurar en la cuenta (30 min por omisión).
+El repo conserva `.devcontainer/devcontainer.json` y `requirements.txt` por si
+quieres un entorno completo, pero **el curso no usa Codespaces**: los cambios se
+hacen en GitHub y los cuadernos se ejecutan en Colab.
 
 ### 🌐 Teoría en GitHub Pages
 
