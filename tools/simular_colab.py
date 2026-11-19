@@ -119,6 +119,12 @@ def _falsos_google(email):
     import requests
 
     class _Respuesta:
+        status_code = 200
+
+        @staticmethod
+        def raise_for_status():
+            return None
+
         @staticmethod
         def json():
             return {"user": {"emailAddress": email, "displayName": "Alumno"}}

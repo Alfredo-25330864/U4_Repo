@@ -152,8 +152,10 @@ else:
         try:
             with open(ruta_json, encoding="utf-8") as f:
                 guardado = json.load(f)
-        except Exception:
-            guardado = {{}}
+        except (OSError, json.JSONDecodeError) as exc:
+            raise RuntimeError(
+                f"No se pudo leer la configuracion de Drive: {{ruta_json}}"
+            ) from exc
 
     enlace = (guardado.get("repo") or "").strip()
     if enlace:
@@ -182,6 +184,20 @@ else:
         json.dump({{"repo": enlace}}, f, indent=1)
     print("Repositorio :", REPO)
     print("Actualizar  : vuelve a ejecutar esta celda cuando subas cambios a GitHub")
+
+# Instala dependencias del repositorio solo si falta alguna.
+import importlib.util
+
+_modulos_requeridos = ("numpy", "scipy", "sympy", "matplotlib", "yaml", "requests")
+_faltantes = [nombre for nombre in _modulos_requeridos
+              if importlib.util.find_spec(nombre) is None]
+if _faltantes:
+    requisitos = os.path.join(REPO, "requirements.txt")
+    if not os.path.isfile(requisitos):
+        raise FileNotFoundError("Falta requirements.txt en el repositorio.")
+    print("Instalando dependencias faltantes:", ", ".join(_faltantes))
+    subprocess.run([sys.executable, "-m", "pip", "install", "-r", requisitos],
+                   check=True)
 
 # Indica al motor empaquetado dónde está la configuración del repositorio.
 os.environ["MN_REPO"] = REPO
@@ -254,8 +270,8 @@ if ES_COLAB:
     creds.refresh(google.auth.transport.requests.Request())
     info = requests.get(
         "https://www.googleapis.com/drive/v3/about?fields=user",
-        headers={{"Authorization": "Bearer " + creds.token}}, timeout=20).json()
-    cuenta = info.get("user", {{}})
+        headers={"Authorization": "Bearer " + creds.token}, timeout=20).json()
+    cuenta = info.get("user", {})
     email = cuenta.get("emailAddress", "")
     nombre = cuenta.get("displayName", "")
 else:
