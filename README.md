@@ -23,14 +23,21 @@ verificación a mano, verificación de preguntas, envío y consulta del envío.
 | **03** | **Mínimos cuadrados** | $S_r$, regresión lineal, cuadrática, $s_{y/x}$, $r^2$ |
 | **04** | **Casos (U3 + U4)** | sistema 3×3 por Gauss (repaso) · calibración con ecuaciones normales resueltas por Gauss · serie de Fourier (tarea extra) |
 
+> 📝 **Versión v2 del cuaderno 03.** `notebooks/U4_03_Minimos_Cuadrados_v2.ipynb`
+> cubre los mismos métodos con explicaciones ampliadas de cada figura
+> (PT5.1, 17.2, 17.4, 17.11 y 13.6) y con **el código escrito dentro del
+> cuaderno**: no hace falta editar `ejercicios/`, tener cuenta de GitHub ni usar
+> Codespaces. En Colab solo se descarga el material del curso (solo lectura).
+
 ### 🔁 El flujo de cada método
 
 1. **Explicación.** Teoría corta, ecuación numerada del libro y figura.
 2. **A mano.** `mano_enunciado(...)` con datos sembrados por tu número de
    control. Reportas los valores con **4 decimales** y `mano_comprueba(...)`
    te dice si están dentro de tolerancia (no revela la respuesta).
-3. **Programar.** Abres el archivo de `ejercicios/` que ya viene armado,
-   completas la función y la pruebas con `practica(...)`.
+3. **Programar.** Completas la función —en el archivo de `ejercicios/` que ya
+   viene armado o, en la versión v2, en una celda del propio cuaderno— y la
+   pruebas con `practica(...)`.
 4. **Laboratorio.** `visualizar.laboratorio(...)` dibuja el método y tu
    resultado.
 5. **Preguntas.** Una o dos preguntas **teóricas** de opción múltiple, dentro
@@ -44,6 +51,10 @@ verificación a mano, verificación de preguntas, envío y consulta del envío.
   evalúa el criterio, no la transcripción del algoritmo.
 - Las **actividades a mano** se verifican localmente y quedan como evidencia;
   no restan puntos si te equivocas, pero sí te avisan.
+- El puntaje se normaliza a **100** y **cada pregunta vale según su
+  dificultad** (`peso:` en su archivo de `preguntas/`): en el cuaderno 03, por
+  ejemplo, valen 15, 20, 20, 20 y 25. `calificar()` muestra el total y el
+  backend recibe los pesos para guardar el mismo número.
 
 El cuaderno 04 cierra el puente entre unidades: las **ecuaciones normales** de
 un ajuste son un sistema lineal, y se resuelven con eliminación gaussiana
